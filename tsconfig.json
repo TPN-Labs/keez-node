@@ -5,6 +5,7 @@
     "lib": [
       "es2020"
     ],
+    "allowJs": true,
     "declaration": true,
     "outDir": "./dist",
     "declarationDir": "./dist/types",
