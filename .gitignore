@@ -34,9 +34,6 @@ bower_components
 # node-waf configuration
 .lock-wscript
 
-# npm library files
-lib/
-
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
@@ -119,3 +116,5 @@ dist
 .pnp.*
 
 .idea/
+
+package-lock.json
