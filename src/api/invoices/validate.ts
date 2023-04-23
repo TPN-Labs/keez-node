@@ -36,7 +36,7 @@ export async function apiValidateInvoice(params: ValidateInvoiceParams) {
     };
     return new Promise((resolve, reject) => {
         request(options, (error, response) => {
-            const errorMessage = error || response.body;
+            const errorMessage = error || response.body.Message;
             if (error || response.statusCode !== 200) {
                 keezLogger.error(`Error encountered while validating invoice (id: ${params.invoiceId}): ${errorMessage}`);
                 reject(errorMessage);
