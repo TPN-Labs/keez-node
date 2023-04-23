@@ -6,9 +6,8 @@
 
 # Keez wrapper using Node
 
-[![npm version](https://img.shields.io/npm/v/@sentry/node.svg)](https://www.npmjs.com/package/keez-invoicing)
-[![npm dm](https://img.shields.io/npm/dm/@sentry/node.svg)](https://www.npmjs.com/package/keez-invoicing)
-[![npm dt](https://img.shields.io/npm/dt/@sentry/node.svg)](https://www.npmjs.com/package/keez-invoicing)
+[![npm dm](https://img.shields.io/npm/dm/keez-invocing)](https://www.npmjs.com/package/keez-invoicing)
+[![npm dt](https://img.shields.io/npm/dt/keez-invocing)](https://www.npmjs.com/package/keez-invoicing)
 
 ## Getting started
 

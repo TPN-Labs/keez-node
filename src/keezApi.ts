@@ -6,12 +6,17 @@ import { apiSendInvoice } from './api/invoices/sendMail';
 import { InvoiceRequest } from './dto/createInvoiceRequest';
 import { apiCreateInvoice } from './api/invoices/create';
 import { apiValidateInvoice } from './api/invoices/validate';
+import { AuthResponse } from './dto/authResponse';
+import { logger } from './helpers/logger';
+
+const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Main' });
 
 export class KeezApi {
     private readonly appId: string;
     private readonly apiSecret: string;
     private readonly apiClientId: string;
     private readonly apiUser: string;
+    private readonly authResponse: AuthResponse;
     private authToken: string;
     private isLive: boolean;
 
@@ -29,6 +34,13 @@ export class KeezApi {
      */
     public getBaseDomain(): string {
         return this.isLive ? 'https://app.keez.ro' : 'https://staging.keez.ro';
+    }
+
+    private async checkIfTokenIsValid() {
+        if (!this.authToken || !this.authResponse || this.authResponse.expires_at < Date.now()) {
+            keezLogger.info('Token is invalid, generating a new one');
+            await this.generateToken();
+        }
     }
 
     private async generateToken() {
@@ -50,7 +62,7 @@ export class KeezApi {
     }
 
     public async getAllInvoices() {
-        await this.generateToken();
+        await this.checkIfTokenIsValid();
         return apiGetAllInvoices({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
@@ -60,7 +72,7 @@ export class KeezApi {
     }
 
     public async getInvoiceByExternalId(invoiceExternalId: string) {
-        await this.generateToken();
+        await this.checkIfTokenIsValid();
         return apiGetInvoiceByExternalId({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
@@ -71,7 +83,7 @@ export class KeezApi {
     }
 
     public async sendInvoice(email: string, invoiceExternalId: string) {
-        await this.generateToken();
+        await this.checkIfTokenIsValid();
         return apiSendInvoice({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
@@ -82,7 +94,7 @@ export class KeezApi {
     }
 
     public async createInvoice(invoiceParams: InvoiceRequest) {
-        await this.generateToken();
+        await this.checkIfTokenIsValid();
         return apiCreateInvoice({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
@@ -93,7 +105,7 @@ export class KeezApi {
     }
 
     public async validateInvoice(invoiceExternalId: string) {
-        await this.generateToken();
+        await this.checkIfTokenIsValid();
         return apiValidateInvoice({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
