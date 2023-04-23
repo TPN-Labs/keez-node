@@ -1,6 +1,11 @@
 import { KeezConstructor } from './config/constructorParam';
 import { apiGenerateToken } from './api/authorise';
-import { apiGetAllInvoices } from './api/invoices';
+import { apiGetAllInvoices } from './api/invoices/getAll';
+import { apiGetInvoiceByExternalId } from './api/invoices/view';
+import { apiSendInvoice } from './api/invoices/sendMail';
+import { InvoiceRequest } from './dto/createInvoiceRequest';
+import { apiCreateInvoice } from './api/invoices/create';
+import { apiValidateInvoice } from './api/invoices/validate';
 
 export class KeezApi {
     private readonly appId: string;
@@ -46,13 +51,55 @@ export class KeezApi {
 
     public async getAllInvoices() {
         await this.generateToken();
-        await apiGetAllInvoices({
+        return apiGetAllInvoices({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
             appClientId: this.apiClientId,
             bearerToken: this.authToken,
         });
-        console.log(this.authToken);
-        return this.authToken;
+    }
+
+    public async getInvoiceByExternalId(invoiceExternalId: string) {
+        await this.generateToken();
+        return apiGetInvoiceByExternalId({
+            baseDomain: this.getBaseDomain(),
+            appId: this.appId,
+            appClientId: this.apiClientId,
+            bearerToken: this.authToken,
+            invoiceId: invoiceExternalId,
+        });
+    }
+
+    public async sendInvoice(email: string, invoiceExternalId: string) {
+        await this.generateToken();
+        return apiSendInvoice({
+            baseDomain: this.getBaseDomain(),
+            appId: this.appId,
+            bearerToken: this.authToken,
+            clientMail: email,
+            invoiceId: invoiceExternalId,
+        });
+    }
+
+    public async createInvoice(invoiceParams: InvoiceRequest) {
+        await this.generateToken();
+        return apiCreateInvoice({
+            baseDomain: this.getBaseDomain(),
+            appId: this.appId,
+            appClientId: this.apiClientId,
+            bearerToken: this.authToken,
+            invoice: invoiceParams,
+        });
+    }
+
+    public async validateInvoice(invoiceExternalId: string) {
+        await this.generateToken();
+        return apiValidateInvoice({
+            baseDomain: this.getBaseDomain(),
+            appId: this.appId,
+            appClientId: this.apiClientId,
+            bearerToken: this.authToken,
+            invoiceId: invoiceExternalId,
+        });
     }
 }

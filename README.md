@@ -1,45 +1,64 @@
-# Keez API wrapper using Node
-
 <p align="center">
  <img width="100px" src="https://raw.githubusercontent.com/TPN-Labs/keez-node/main/.github/images/favicon512x512-npm.png" align="center" alt=":package: keez-node" />
- <h2 align="center">📦 keez-node</h2>
- <p align="center">TypeScript NPM Module Boilerplate</p>
-  <p align="center">
-    <a href="https://github.com/TPN-Labs/keez-node/issues">
-      <img alt="Issues" src="https://img.shields.io/github/issues/TPN-Labs/keez-node?style=flat&color=336791" />
-    </a>
-    <a href="https://github.com/TPN-Labs/keez-node/pulls">
-      <img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/TPN-Labs/keez-node?style=flat&color=336791" />
-    </a>
-     <a href="https://github.com/TPN-Labs/keez-node">
-      <img alt="GitHub Downloads" src="https://img.shields.io/npm/dw/keez-node?style=flat&color=336791" />
-    </a>
-    <a href="https://github.com/TPN-Labs/keez-node">
-      <img alt="GitHub Total Downloads" src="https://img.shields.io/npm/dt/keez-node?color=336791&label=Total%20downloads" />
-    </a>
- <a href="https://github.com/TPN-Labs/keez-node">
-      <img alt="GitHub release" src="https://img.shields.io/github/release/TPN-Labs/keez-node.svg?style=flat&color=336791" />
-    </a>
-  </p>
+ <h2 align="center">📦 keez-invocing</h2>
+ <p align="center">🚀 A simple npm package for invoicing that wraps around Keez API.</p>
+</p>
 
-[![codecov](https://codecov.io/gh/TPN-Labs/keez-node/branch/main/graph/badge.svg?token=Q9fr548J0D)](https://codecov.io/gh/TPN-Labs/keez-node)
+# Keez wrapper using Node
 
-# Getting started
+[![npm version](https://img.shields.io/npm/v/@sentry/node.svg)](https://www.npmjs.com/package/keez-invoicing)
+[![npm dm](https://img.shields.io/npm/dm/@sentry/node.svg)](https://www.npmjs.com/package/keez-invoicing)
+[![npm dt](https://img.shields.io/npm/dt/@sentry/node.svg)](https://www.npmjs.com/package/keez-invoicing)
 
-## Installation
+## Getting started
 
-> Clone this repository: `git clone https://github.com/TPN-Labs/keez-node`
+Please consult [Keez API documentation](https://app.keez.ro/help/api/content.html) for more information on how to use the API.
 
-### Open the directory and run the script line:
+### Installation
 
 ```bash
-cd keez-node 
+npm install keez-invocing
 ```
-```bash
-npm i  # or yarn
+
+#### Initialization
+
+```ts
+const keezApi = new KeezApi({
+    application_id: 'KEEZ_APPLICATION_ID',
+    client_eid: 'KEEZ_CLIENT_ID',
+    secret: 'KEEZ_SECRET',
+    user: 'KEEZ_USER',
+    live: true,
+});
 ```
-```bash
-rm -rf .git && git init && git add . && git commit -m "Initial commit" #Optional
+
+#### Getting all invoices
+```ts
+const result = await keezApi.getAllInvoices();
+console.log(result);
+```
+
+#### Creating an invoice
+```ts
+const result = await keezApi.createInvoice({
+    amount: 400,
+    currencyCode: 'RON',
+    itemId: 'KEEZ_ITEM_ID',
+    partner: {
+        isLegalPerson: false,
+        partnerName: 'John Doe',
+        countryName: 'Romania',
+        countryCode: 'RO',
+        countyCode: 'RO.B',
+        countyName: 'Bucuresti',
+        addressDetails: 'Str. Comerciala nr. 4',
+        cityName: 'Bucharest',
+        identificationNumber: '1234',
+    },
+    paymentType: 10,
+    series: 'exampleSeries',
+});
+console.log(result);
 ```
 
 ## 🤝 Contributing
@@ -48,6 +67,4 @@ Contributions, issues and feature requests are welcome!
 
 ## 📝 License
 
-Copyright © 2023 [TPN LABS](https://tpn-labs.com).
-
-This project is [MIT](LICENSE) licensed.
+Copyright © 2023 [TPN LABS](https://tpn-labs.com) - All rights reserved. This project is [MIT](LICENSE) licensed.

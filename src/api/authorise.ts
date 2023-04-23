@@ -1,6 +1,6 @@
 import request = require('request');
 import { logger } from '../helpers/logger';
-import { KeezAuthResponse } from '../config/authResponse';
+import { AuthResponse } from '../dto/authResponse';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'GenerateToken' });
 
@@ -17,10 +17,10 @@ interface GenerateTokenParams {
 
 /**
  * Generate a token for the Keez API
- * @returns {KeezAuthResponse} - The token response containing the access token and the expiry time
+ * @returns {AuthResponse} - The token response containing the access token and the expiry time
  * @param params - As defined in the interface
  */
-export async function apiGenerateToken(params: GenerateTokenParams): Promise<KeezAuthResponse> {
+export async function apiGenerateToken(params: GenerateTokenParams): Promise<AuthResponse> {
     const options = {
         method: 'POST',
         url: `${params.baseDomain}/idp/connect/token`,
@@ -43,7 +43,7 @@ export async function apiGenerateToken(params: GenerateTokenParams): Promise<Kee
                 throw new Error(errorMessage);
             }
             const responseObject = JSON.parse(body);
-            const result: KeezAuthResponse = {
+            const result: AuthResponse = {
                 access_token: responseObject.access_token,
                 expires_in: responseObject.expires_in,
                 token_type: responseObject.token_type,

@@ -1,6 +1,6 @@
 {
-  "name": "keez-api-npm-package",
-  "version": "1.0.0",
+  "name": "keez-invocing",
+  "version": "1.0.2",
   "description": "Keez API wrapper using Node",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
