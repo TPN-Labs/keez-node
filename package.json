@@ -1,6 +1,6 @@
 {
     "name": "keez-invoicing",
-    "version": "1.2.0",
+    "version": "1.1.5",
     "description": "Keez API wrapper using Node",
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
@@ -29,6 +29,8 @@
     "keywords": [
         "keez",
         "node",
+        "romania",
+        "efactura",
         "typescript"
     ],
     "author": "TPN LABS",
