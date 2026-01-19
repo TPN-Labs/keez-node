@@ -1,54 +1,60 @@
 {
-  "name": "keez-invoicing",
-  "version": "1.0.4",
-  "description": "Keez API wrapper using Node",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "format": "prettier --write \"src/**/*.(js|ts)\"",
-    "lint": "eslint src --ext .js,.ts",
-    "lint:fix": "eslint src --fix --ext .js,.ts",
-    "test": "jest --config jest.config.js",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
-    "preversion": "npm run lint",
-    "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TPN-Labs/keez-node.git"
-  },
-  "keywords": [
-    "keez",
-    "node",
-    "typescript"
-  ],
-  "author": "Mihai-Alexandru Matraguna",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/TPN-Labs/keez-node/issues"
-  },
-  "homepage": "https://github.com/TPN-Labs/keez-node#readme",
-  "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "@typescript-eslint/eslint-plugin": "^8.20.0",
-    "@typescript-eslint/parser": "^8.20.0",
-    "eslint": "^8.57.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-jest": "^28.10.0",
-    "jest": "^29.7.0",
-    "nock": "^13.5.0",
-    "prettier": "^3.4.2",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.7.3"
-  },
-  "files": [
-    "dist/**/*"
-  ],
-  "dependencies": {
-    "axios": "^1.7.9",
-    "winston": "^3.17.0"
-  }
+    "name": "keez-invoicing",
+    "version": "1.1.0",
+    "description": "Keez API wrapper using Node",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "format": "prettier --write \"src/**/*.(js|ts)\"",
+        "lint": "eslint src --ext .js,.ts",
+        "lint:fix": "eslint src --fix --ext .js,.ts",
+        "postversion": "git push && git push --tags",
+        "prepare": "npm run build",
+        "prepublishOnly": "npm test && npm run lint",
+        "preversion": "npm run lint",
+        "test": "jest --config jest.config.js",
+        "test:ci": "jest --coverage --ci --maxWorkers=2",
+        "test:coverage": "jest --coverage",
+        "test:e2e": "jest --testPathPatterns=e2e",
+        "test:integration": "jest --testPathPatterns=integration",
+        "test:unit": "jest --testPathPatterns=unit",
+        "test:watch": "jest --watch",
+        "version": "npm run format && git add -A src"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TPN-Labs/keez-node.git"
+    },
+    "keywords": [
+        "keez",
+        "node",
+        "typescript"
+    ],
+    "author": "TPN LABS",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/TPN-Labs/keez-node/issues"
+    },
+    "homepage": "https://github.com/TPN-Labs/keez-node#readme",
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "@typescript-eslint/eslint-plugin": "^8.20.0",
+        "@typescript-eslint/parser": "^8.20.0",
+        "eslint": "^8.57.0",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-plugin-jest": "^28.10.0",
+        "jest": "^29.7.0",
+        "nock": "^13.5.0",
+        "prettier": "^3.4.2",
+        "ts-jest": "^29.2.5",
+        "typescript": "^5.7.3"
+    },
+    "files": [
+        "dist/**/*"
+    ],
+    "dependencies": {
+        "axios": "^1.7.9",
+        "winston": "^3.17.0"
+    }
 }

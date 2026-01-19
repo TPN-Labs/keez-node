@@ -66,4 +66,4 @@ Contributions, issues and feature requests are welcome!
 
 ## 📝 License
 
-Copyright © 2023 [TPN LABS](https://tpn-labs.com) - All rights reserved. This project is [MIT](LICENSE) licensed.
+Copyright © 2023 - 2026 [TPN LABS](https://tpn-labs.com) - All rights reserved. This project is [MIT](LICENSE) licensed.
