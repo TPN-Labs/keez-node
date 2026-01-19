@@ -1,5 +1,6 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
+import { KeezApiError } from '../../errors/KeezError';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -21,37 +22,43 @@ interface SendInvoiceParams {
 /**
  * Send an invoice by external ID
  * @param params - as defined in the interface
+ * @returns {Promise<string>} - Returns 'SENT' on success
  */
-export async function apiSendInvoice(params: SendInvoiceParams) {
-    const options = {
-        method: 'POST',
-        url: `${params.baseDomain}/api/v1.0/public-api/invoices/delivery`,
-        body: {
-            invoiceExternalId: params.invoiceId,
-            info: [
-                {
-                    deliveryMethod: 'Email',
-                    representationType: 'Attachment',
-                    recipients: {
-                        to: params.clientMail,
-                    },
+export async function apiSendInvoice(params: SendInvoiceParams): Promise<string> {
+    const url = `${params.baseDomain}/api/v1.0/public-api/invoices/delivery`;
+    const body = {
+        invoiceExternalId: params.invoiceId,
+        info: [
+            {
+                deliveryMethod: 'Email',
+                representationType: 'Attachment',
+                recipients: {
+                    to: params.clientMail,
                 },
-            ],
-        },
-        json: true,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
+            },
+        ],
     };
-    return new Promise((resolve, reject) => {
-        request(options, (error, response) => {
-            const errorMessage = error || response.body;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while sending e-mail for invoice (id: ${params.invoiceId}): ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve('SENT');
+
+    try {
+        await axios.post(url, body, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 30000,
         });
-    });
+
+        return 'SENT';
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(
+            `Error encountered while sending e-mail for invoice (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
+        throw new KeezApiError(
+            `Failed to send invoice email: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }
