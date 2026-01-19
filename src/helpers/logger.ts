@@ -1,4 +1,4 @@
-import winston = require('winston');
+import winston from 'winston';
 
 const transports = (process.env.NODE_ENV === 'production') ? [
     new winston.transports.Console({ level: 'info' }),
@@ -13,5 +13,3 @@ export const logger = winston.createLogger({
     ),
     transports,
 });
-
-logger.info('Keez Wrapper initialized');

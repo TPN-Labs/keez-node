@@ -8,4 +8,5 @@ export enum PaymentType {
     CARD_PLATFORMS = 7, // Plata cu platforme distributie si plata (Emag)
     HOLIDAY_VOUCHER_CARD = 8, // Plata cu voucher de vacanta (card)
     HOLIDAY_VOUCHER_TICKET = 9, // Plata cu voucher de vacanta (ticket)
+    MEAL_VOUCHER = 10, // Plata cu tichete de masa
 }
