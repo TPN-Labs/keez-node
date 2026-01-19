@@ -2,6 +2,15 @@ import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { InvoiceRequest } from '../../dto/createInvoiceRequest';
 import { KeezApiError } from '../../errors/KeezError';
+import {
+    HTTP_REQUEST_TIMEOUT_MS,
+    DATE_PAD_LENGTH,
+    MONTH_INDEX_OFFSET,
+    DECIMAL_RADIX,
+    DEFAULT_VAT_AMOUNT,
+    DEFAULT_INVOICE_QUANTITY,
+} from '../../config/constants';
+import { MeasureUnit } from '../../config/measureUnit';
 
 const keezLogger = logger.child({
     _library: 'KeezWrapper',
@@ -29,9 +38,9 @@ interface CreateInvoiceParams {
 function getCurrentDateNumber(): number {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return parseInt(`${year}${month}${day}`, 10);
+    const month = String(now.getMonth() + MONTH_INDEX_OFFSET).padStart(DATE_PAD_LENGTH, '0');
+    const day = String(now.getDate()).padStart(DATE_PAD_LENGTH, '0');
+    return parseInt(`${year}${month}${day}`, DECIMAL_RADIX);
 }
 
 /**
@@ -51,12 +60,12 @@ export async function apiCreateInvoice(params: CreateInvoiceParams): Promise<str
         currencyCode: params.invoice.currencyCode,
         originalNetAmount: params.invoice.amount,
         originalNetAmountCurrency: params.invoice.amount,
-        originalVatAmount: 0,
-        originalVatAmountCurrency: 0,
+        originalVatAmount: DEFAULT_VAT_AMOUNT,
+        originalVatAmountCurrency: DEFAULT_VAT_AMOUNT,
         netAmount: params.invoice.amount,
         netAmountCurrency: params.invoice.amount,
-        vatAmount: 0,
-        vatAmountCurrency: 0,
+        vatAmount: DEFAULT_VAT_AMOUNT,
+        vatAmountCurrency: DEFAULT_VAT_AMOUNT,
         grossAmount: params.invoice.amount,
         grossAmountCurrency: params.invoice.amount,
         paymentTypeId: params.invoice.paymentType,
@@ -73,17 +82,17 @@ export async function apiCreateInvoice(params: CreateInvoiceParams): Promise<str
         invoiceDetails: [
             {
                 itemExternalId: params.invoice.itemId,
-                measureUnitId: params.invoice.measureUnitId ?? 1,
-                quantity: params.invoice.quantity ?? 1,
+                measureUnitId: params.invoice.measureUnitId ?? MeasureUnit.PIECE,
+                quantity: params.invoice.quantity ?? DEFAULT_INVOICE_QUANTITY,
                 unitPrice: params.invoice.amount,
                 originalNetAmount: params.invoice.amount,
                 originalNetAmountCurrency: params.invoice.amount,
-                originalVatAmount: 0,
-                originalVatAmountCurrency: 0,
+                originalVatAmount: DEFAULT_VAT_AMOUNT,
+                originalVatAmountCurrency: DEFAULT_VAT_AMOUNT,
                 netAmount: params.invoice.amount,
                 netAmountCurrency: params.invoice.amount,
-                vatAmount: 0,
-                vatAmountCurrency: 0,
+                vatAmount: DEFAULT_VAT_AMOUNT,
+                vatAmountCurrency: DEFAULT_VAT_AMOUNT,
                 grossAmount: params.invoice.amount,
                 grossAmountCurrency: params.invoice.amount,
             },
@@ -96,7 +105,7 @@ export async function apiCreateInvoice(params: CreateInvoiceParams): Promise<str
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
             },
-            timeout: 30000,
+            timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
 
         return response.data.externalId;

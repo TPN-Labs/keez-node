@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { KeezApiError } from '../../errors/KeezError';
+import { HTTP_REQUEST_TIMEOUT_MS } from '../../config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -30,7 +31,7 @@ export async function apiSubmitEfactura(params: SubmitEfacturaParams): Promise<s
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
             },
-            timeout: 30000,
+            timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
 
         return response.data.uploadIndex || response.data.externalId || 'SUBMITTED';

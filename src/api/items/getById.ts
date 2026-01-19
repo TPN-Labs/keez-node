@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { ItemResponse } from '../../dto/items';
 import { KeezApiError } from '../../errors/KeezError';
+import { HTTP_REQUEST_TIMEOUT_MS } from '../../config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
 
@@ -37,7 +38,7 @@ export async function apiGetItemById(params: GetItemByIdParams): Promise<ItemRes
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
             },
-            timeout: 30000,
+            timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
 
         const item = response.data;

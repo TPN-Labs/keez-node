@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { InvoiceRequestV2 } from '../../dto/invoices';
 import { KeezApiError } from '../../errors/KeezError';
+import { HTTP_REQUEST_TIMEOUT_MS } from '../../config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -56,7 +57,7 @@ export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<voi
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
             },
-            timeout: 30000,
+            timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
     } catch (error) {
         const axiosError = error as AxiosError;

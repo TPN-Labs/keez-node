@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { KeezApiError } from '../../errors/KeezError';
+import { DOWNLOAD_REQUEST_TIMEOUT_MS } from '../../config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -20,7 +21,7 @@ export async function apiDownloadInvoicePdf(params: DownloadPdfParams): Promise<
                 Authorization: `Bearer ${params.bearerToken}`,
             },
             responseType: 'arraybuffer',
-            timeout: 60000,
+            timeout: DOWNLOAD_REQUEST_TIMEOUT_MS,
         });
 
         return Buffer.from(response.data);
