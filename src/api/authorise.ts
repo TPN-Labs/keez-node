@@ -1,7 +1,8 @@
 import axios, { AxiosError } from 'axios';
-import { logger } from '../helpers/logger';
-import { AuthResponse } from '../dto/authResponse';
-import { KeezAuthError } from '../errors/KeezError';
+import { logger } from '@/helpers/logger';
+import { AuthResponse } from '@/dto/authResponse';
+import { KeezAuthError } from '@/errors/KeezError';
+import { HTTP_REQUEST_TIMEOUT_MS, TOKEN_EXPIRY_BUFFER_MS } from '@/config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'GenerateToken' });
 
@@ -35,14 +36,14 @@ export async function apiGenerateToken(params: GenerateTokenParams): Promise<Aut
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            timeout: 30000,
+            timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
 
         const responseObject = response.data;
         return {
             access_token: responseObject.access_token,
             expires_in: responseObject.expires_in,
-            expires_at: new Date(Date.now() + 5 * 60 * 1000).getTime(), // 5 minutes
+            expires_at: new Date(Date.now() + TOKEN_EXPIRY_BUFFER_MS).getTime(),
             token_type: responseObject.token_type,
             scope: responseObject.scope,
         };

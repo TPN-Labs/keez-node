@@ -1,11 +1,11 @@
 {
     "name": "keez-invoicing",
-    "version": "1.1.0",
+    "version": "1.1.5",
     "description": "Keez API wrapper using Node",
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && tsc-alias",
         "format": "prettier --write \"src/**/*.(js|ts)\"",
         "lint": "eslint src --ext .js,.ts",
         "lint:fix": "eslint src --fix --ext .js,.ts",
@@ -29,6 +29,8 @@
     "keywords": [
         "keez",
         "node",
+        "romania",
+        "efactura",
         "typescript"
     ],
     "author": "TPN LABS",
@@ -48,6 +50,7 @@
         "nock": "^13.5.0",
         "prettier": "^3.4.2",
         "ts-jest": "^29.2.5",
+        "tsc-alias": "^1.8.16",
         "typescript": "^5.7.3"
     },
     "files": [

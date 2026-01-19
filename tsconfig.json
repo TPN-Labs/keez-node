@@ -10,6 +10,10 @@
     "outDir": "./dist",
     "declarationDir": "./dist/types",
     "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "esModuleInterop": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -23,6 +27,7 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
+    "skipLibCheck": true,
     "typeRoots": [
       "./node_modules/@types"
     ]

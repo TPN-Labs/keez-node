@@ -1,4 +1,4 @@
-import { PaymentType } from '../config/paymentType';
+import { PaymentType } from '@/config/paymentType';
 
 export interface Partner {
     addressDetails: string;
