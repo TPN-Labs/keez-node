@@ -39,14 +39,13 @@ export async function apiGenerateToken(params: GenerateTokenParams): Promise<Aut
         });
 
         const responseObject = response.data;
-        const result: AuthResponse = {
+        return {
             access_token: responseObject.access_token,
             expires_in: responseObject.expires_in,
-            expires_at: new Date(Date.now() + (5 * 60 * 1000)).getTime(), // 5 minutes
+            expires_at: new Date(Date.now() + 5 * 60 * 1000).getTime(), // 5 minutes
             token_type: responseObject.token_type,
             scope: responseObject.scope,
         };
-        return result;
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
@@ -54,7 +53,7 @@ export async function apiGenerateToken(params: GenerateTokenParams): Promise<Aut
         throw new KeezAuthError(
             `Authentication failed: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,
-            error,
+            error
         );
     }
 }

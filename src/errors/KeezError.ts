@@ -3,7 +3,7 @@ export class KeezError extends Error {
     constructor(
         message: string,
         public readonly statusCode?: number,
-        public readonly originalError?: unknown,
+        public readonly originalError?: unknown
     ) {
         super(message);
         this.name = 'KeezError';

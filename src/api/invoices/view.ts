@@ -158,11 +158,13 @@ export async function apiGetInvoiceByExternalId(params: ViewInvoiceParams): Prom
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while getting invoice details (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while getting invoice details (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to get invoice details: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,
-            error,
+            error
         );
     }
 }

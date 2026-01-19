@@ -44,10 +44,6 @@ export async function apiValidateInvoice(params: ValidateInvoiceParams): Promise
         const axiosError = error as AxiosError<{ Message?: string }>;
         const errorMessage = axiosError.response?.data?.Message || axiosError.message;
         keezLogger.error(`Error encountered while validating invoice (id: ${params.invoiceId}): ${errorMessage}`);
-        throw new KeezApiError(
-            `Failed to validate invoice: ${errorMessage}`,
-            axiosError.response?.status,
-            error,
-        );
+        throw new KeezApiError(`Failed to validate invoice: ${errorMessage}`, axiosError.response?.status, error);
     }
 }

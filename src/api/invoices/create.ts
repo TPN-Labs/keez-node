@@ -104,10 +104,6 @@ export async function apiCreateInvoice(params: CreateInvoiceParams): Promise<str
         const axiosError = error as AxiosError<{ Message?: string }>;
         const errorMessage = axiosError.response?.data?.Message || axiosError.message;
         keezLogger.error(`Error encountered while creating invoice: ${errorMessage}`);
-        throw new KeezApiError(
-            `Failed to create invoice: ${errorMessage}`,
-            axiosError.response?.status,
-            error,
-        );
+        throw new KeezApiError(`Failed to create invoice: ${errorMessage}`, axiosError.response?.status, error);
     }
 }

@@ -52,11 +52,13 @@ export async function apiSendInvoice(params: SendInvoiceParams): Promise<string>
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while sending e-mail for invoice (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while sending e-mail for invoice (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to send invoice email: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,
-            error,
+            error
         );
     }
 }

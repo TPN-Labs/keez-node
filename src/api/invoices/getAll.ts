@@ -87,7 +87,7 @@ export async function apiGetAllInvoices(params: GetAllInvoicesParams): Promise<A
         throw new KeezApiError(
             `Failed to get all invoices: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,
-            error,
+            error
         );
     }
 }
