@@ -14,13 +14,7 @@ import { apiDownloadInvoicePdf } from './api/invoices/downloadPdf';
 import { AuthResponse } from './dto/authResponse';
 import { logger } from './helpers/logger';
 import { InvoiceFilterParams, InvoiceRequestV2, SendInvoiceEmailParams } from './dto/invoices';
-import {
-    apiGetAllItems,
-    apiGetItemById,
-    apiCreateItem,
-    apiUpdateItem,
-    apiPatchItem,
-} from './api/items';
+import { apiGetAllItems, apiGetItemById, apiCreateItem, apiUpdateItem, apiPatchItem } from './api/items';
 import {
     AllItemsResponse,
     CreateItemRequest,
@@ -125,7 +119,10 @@ export class KeezApi {
      * @param invoiceExternalId - The external ID of the invoice
      */
     public async sendInvoice(emailParams: SendInvoiceEmailParams, invoiceExternalId: string): Promise<string>;
-    public async sendInvoice(emailOrParams: string | SendInvoiceEmailParams, invoiceExternalId: string): Promise<string> {
+    public async sendInvoice(
+        emailOrParams: string | SendInvoiceEmailParams,
+        invoiceExternalId: string
+    ): Promise<string> {
         await this.checkIfTokenIsValid();
         if (typeof emailOrParams === 'string') {
             return apiSendInvoice({

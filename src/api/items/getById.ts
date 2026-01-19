@@ -60,7 +60,9 @@ export async function apiGetItemById(params: GetItemByIdParams): Promise<ItemRes
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while getting item by ID (${params.itemId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while getting item by ID (${params.itemId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to get item by ID: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,

@@ -61,7 +61,9 @@ export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<voi
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while updating invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while updating invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to update invoice: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,

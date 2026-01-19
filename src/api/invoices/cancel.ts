@@ -30,7 +30,9 @@ export async function apiCancelInvoice(params: CancelInvoiceParams): Promise<voi
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while canceling invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while canceling invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to cancel invoice: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,

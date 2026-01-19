@@ -29,7 +29,9 @@ export async function apiDeleteInvoice(params: DeleteInvoiceParams): Promise<voi
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while deleting invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while deleting invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to delete invoice: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,

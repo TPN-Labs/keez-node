@@ -27,7 +27,9 @@ export async function apiDownloadInvoicePdf(params: DownloadPdfParams): Promise<
     } catch (error) {
         const axiosError = error as AxiosError;
         const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while downloading invoice PDF (${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        keezLogger.error(
+            `Error encountered while downloading invoice PDF (${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
         throw new KeezApiError(
             `Failed to download invoice PDF: ${JSON.stringify(errorMessage)}`,
             axiosError.response?.status,
