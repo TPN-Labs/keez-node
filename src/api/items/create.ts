@@ -1,6 +1,7 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { CreateItemRequest } from '../../dto/items';
+import { KeezApiError } from '../../errors/KeezError';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
 
@@ -12,36 +13,43 @@ interface CreateItemParams {
     readonly item: CreateItemRequest;
 }
 
+interface CreateItemResponse {
+    externalId: string;
+}
+
 export async function apiCreateItem(params: CreateItemParams): Promise<string> {
-    const options = {
-        method: 'POST',
-        url: `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items`,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
-        body: {
-            itemName: params.item.itemName,
-            itemCode: params.item.itemCode,
-            itemDescription: params.item.itemDescription,
-            measureUnitId: params.item.measureUnitId,
-            unitPrice: params.item.unitPrice,
-            vatPercent: params.item.vatPercent,
-            vatCategoryCode: params.item.vatCategoryCode,
-            vatExemptionReason: params.item.vatExemptionReason,
-            isActive: params.item.isActive ?? true,
-        },
-        json: true,
+    const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items`;
+
+    const body = {
+        itemName: params.item.itemName,
+        itemCode: params.item.itemCode,
+        itemDescription: params.item.itemDescription,
+        measureUnitId: params.item.measureUnitId,
+        unitPrice: params.item.unitPrice,
+        vatPercent: params.item.vatPercent,
+        vatCategoryCode: params.item.vatCategoryCode,
+        vatExemptionReason: params.item.vatExemptionReason,
+        isActive: params.item.isActive ?? true,
     };
 
-    return new Promise((resolve, reject) => {
-        request(options, (error, response, body) => {
-            const errorMessage = error || body?.Message;
-            if (error || response.statusCode !== 201) {
-                keezLogger.error(`Error encountered while creating item: ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve(body.externalId);
+    try {
+        const response = await axios.post<CreateItemResponse>(url, body, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 30000,
         });
-    });
+
+        return response.data.externalId;
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(`Error encountered while creating item: ${JSON.stringify(errorMessage)}`);
+        throw new KeezApiError(
+            `Failed to create item: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }

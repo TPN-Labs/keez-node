@@ -36,8 +36,7 @@ export class KeezApi {
     private readonly appId: string;
     private readonly apiSecret: string;
     private readonly apiClientId: string;
-    private readonly apiUser: string;
-    private readonly authResponse: AuthResponse;
+    private authResponse: AuthResponse | null = null;
     private authToken: string;
     private isLive: boolean;
 
@@ -45,7 +44,6 @@ export class KeezApi {
         this.appId = params.application_id;
         this.apiSecret = params.secret;
         this.apiClientId = params.client_eid;
-        this.apiUser = params.user;
         this.isLive = params.live;
     }
 
@@ -70,6 +68,7 @@ export class KeezApi {
             appId: this.appId,
             apiSecret: this.apiSecret,
         });
+        this.authResponse = authResponse;
         this.authToken = authResponse.access_token;
     }
 

@@ -1,6 +1,7 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { PatchItemRequest } from '../../dto/items';
+import { KeezApiError } from '../../errors/KeezError';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
 
@@ -14,8 +15,9 @@ interface PatchItemParams {
 }
 
 export async function apiPatchItem(params: PatchItemParams): Promise<void> {
-    const patchBody: Record<string, any> = {};
+    const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items/${params.itemId}`;
 
+    const patchBody: Record<string, unknown> = {};
     if (params.item.itemName !== undefined) patchBody.itemName = params.item.itemName;
     if (params.item.itemCode !== undefined) patchBody.itemCode = params.item.itemCode;
     if (params.item.itemDescription !== undefined) patchBody.itemDescription = params.item.itemDescription;
@@ -26,25 +28,22 @@ export async function apiPatchItem(params: PatchItemParams): Promise<void> {
     if (params.item.vatExemptionReason !== undefined) patchBody.vatExemptionReason = params.item.vatExemptionReason;
     if (params.item.isActive !== undefined) patchBody.isActive = params.item.isActive;
 
-    const options = {
-        method: 'PATCH',
-        url: `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items/${params.itemId}`,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
-        body: patchBody,
-        json: true,
-    };
-
-    return new Promise((resolve, reject) => {
-        request(options, (error, response, body) => {
-            const errorMessage = error || body?.Message;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while patching item (${params.itemId}): ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve();
+    try {
+        await axios.patch(url, patchBody, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 30000,
         });
-    });
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(`Error encountered while patching item (${params.itemId}): ${JSON.stringify(errorMessage)}`);
+        throw new KeezApiError(
+            `Failed to patch item: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }

@@ -1,4 +1,4 @@
-import { PaymentType } from '../config/paymentType.js';
+import { PaymentType } from '../config/paymentType';
 
 export interface Partner {
     addressDetails: string;
@@ -12,6 +12,16 @@ export interface Partner {
     partnerName: string;
 }
 
+export interface InvoiceDetail {
+    itemExternalId: string;
+    measureUnitId: number;
+    quantity: number;
+    unitPrice: number;
+    netAmount: number;
+    vatAmount: number;
+    grossAmount: number;
+}
+
 export interface InvoiceRequest {
     series: string;
     currencyCode: string;
@@ -19,4 +29,9 @@ export interface InvoiceRequest {
     paymentType: PaymentType;
     partner: Partner;
     itemId: string;
+    documentDate?: number;
+    dueDate?: number;
+    measureUnitId?: number;
+    quantity?: number;
+    vatOnCollection?: boolean;
 }

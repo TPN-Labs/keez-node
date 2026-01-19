@@ -1,5 +1,6 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
+import { KeezApiError } from '../../errors/KeezError';
 import { SendInvoiceEmailParams } from '../../dto/invoices';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
@@ -24,10 +25,12 @@ interface SendInvoiceParams {
 /**
  * Send an invoice by external ID
  * @param params - as defined in the interface
+ * @returns {Promise<string>} - Returns 'SENT' on success
  */
 export async function apiSendInvoice(params: SendInvoiceParams): Promise<string> {
-    const recipients: Record<string, any> = {};
+    const url = `${params.baseDomain}/api/v1.0/public-api/invoices/delivery`;
 
+    const recipients: Record<string, string> = {};
     if (params.emailParams) {
         recipients.to = params.emailParams.to;
         if (params.emailParams.cc && params.emailParams.cc.length > 0) {
@@ -40,33 +43,37 @@ export async function apiSendInvoice(params: SendInvoiceParams): Promise<string>
         recipients.to = params.clientMail;
     }
 
-    const options = {
-        method: 'POST',
-        url: `${params.baseDomain}/api/v1.0/public-api/invoices/delivery`,
-        body: {
-            invoiceExternalId: params.invoiceId,
-            info: [
-                {
-                    deliveryMethod: 'Email',
-                    representationType: 'Attachment',
-                    recipients,
-                },
-            ],
-        },
-        json: true,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
+    const body = {
+        invoiceExternalId: params.invoiceId,
+        info: [
+            {
+                deliveryMethod: 'Email',
+                representationType: 'Attachment',
+                recipients,
+            },
+        ],
     };
-    return new Promise<string>((resolve, reject) => {
-        request(options, (error: any, response: any) => {
-            const errorMessage = error || response.body;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while sending e-mail for invoice (id: ${params.invoiceId}): ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve('SENT');
+
+    try {
+        await axios.post(url, body, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 30000,
         });
-    });
+
+        return 'SENT';
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(
+            `Error encountered while sending e-mail for invoice (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
+        throw new KeezApiError(
+            `Failed to send invoice email: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }

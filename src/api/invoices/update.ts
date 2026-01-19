@@ -1,6 +1,7 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { InvoiceRequestV2 } from '../../dto/invoices';
+import { KeezApiError } from '../../errors/KeezError';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -14,6 +15,8 @@ interface UpdateInvoiceParams {
 }
 
 export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<void> {
+    const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/${params.invoiceId}`;
+
     const invoiceDetails = params.invoice.items.map(item => ({
         itemExternalId: item.itemExternalId,
         measureUnitId: item.measureUnitId,
@@ -24,46 +27,45 @@ export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<voi
         description: item.description,
     }));
 
-    const options = {
-        method: 'PUT',
-        url: `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/${params.invoiceId}`,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
+    const body = {
+        series: params.invoice.series,
+        documentDate: params.invoice.documentDate,
+        dueDate: params.invoice.dueDate,
+        currencyCode: params.invoice.currencyCode,
+        paymentTypeId: params.invoice.paymentType,
+        vatOnCollection: params.invoice.vatOnCollection ?? false,
+        exchangeRate: params.invoice.exchangeRate,
+        notes: params.invoice.notes,
+        partner: {
+            isLegalPerson: params.invoice.partner.isLegalPerson,
+            partnerName: params.invoice.partner.partnerName,
+            identificationNumber: params.invoice.partner.identificationNumber,
+            countryCode: params.invoice.partner.countryCode,
+            countryName: params.invoice.partner.countryName,
+            countyCode: params.invoice.partner.countyCode,
+            countyName: params.invoice.partner.countyName,
+            cityName: params.invoice.partner.cityName,
+            addressDetails: params.invoice.partner.addressDetails,
         },
-        body: {
-            series: params.invoice.series,
-            documentDate: params.invoice.documentDate,
-            dueDate: params.invoice.dueDate,
-            currencyCode: params.invoice.currencyCode,
-            paymentTypeId: params.invoice.paymentType,
-            vatOnCollection: params.invoice.vatOnCollection ?? false,
-            exchangeRate: params.invoice.exchangeRate,
-            notes: params.invoice.notes,
-            partner: {
-                isLegalPerson: params.invoice.partner.isLegalPerson,
-                partnerName: params.invoice.partner.partnerName,
-                identificationNumber: params.invoice.partner.identificationNumber,
-                countryCode: params.invoice.partner.countryCode,
-                countryName: params.invoice.partner.countryName,
-                countyCode: params.invoice.partner.countyCode,
-                countyName: params.invoice.partner.countyName,
-                cityName: params.invoice.partner.cityName,
-                addressDetails: params.invoice.partner.addressDetails,
-            },
-            invoiceDetails,
-        },
-        json: true,
+        invoiceDetails,
     };
 
-    return new Promise((resolve, reject) => {
-        request(options, (error, response, body) => {
-            const errorMessage = error || body?.Message;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while updating invoice (${params.invoiceId}): ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve();
+    try {
+        await axios.put(url, body, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 30000,
         });
-    });
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(`Error encountered while updating invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        throw new KeezApiError(
+            `Failed to update invoice: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }

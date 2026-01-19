@@ -1,5 +1,6 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
+import { KeezApiError } from '../../errors/KeezError';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -12,27 +13,27 @@ interface DeleteInvoiceParams {
 }
 
 export async function apiDeleteInvoice(params: DeleteInvoiceParams): Promise<void> {
-    const options = {
-        method: 'DELETE',
-        url: `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices`,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
-        body: {
-            externalId: params.invoiceId,
-        },
-        json: true,
-    };
+    const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices`;
 
-    return new Promise((resolve, reject) => {
-        request(options, (error, response, body) => {
-            const errorMessage = error || body?.Message;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while deleting invoice (${params.invoiceId}): ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve();
+    try {
+        await axios.delete(url, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            data: {
+                externalId: params.invoiceId,
+            },
+            timeout: 30000,
         });
-    });
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(`Error encountered while deleting invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`);
+        throw new KeezApiError(
+            `Failed to delete invoice: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }

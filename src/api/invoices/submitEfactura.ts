@@ -1,5 +1,6 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
+import { KeezApiError } from '../../errors/KeezError';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -11,28 +12,38 @@ interface SubmitEfacturaParams {
     readonly invoiceId: string;
 }
 
+interface EfacturaResponse {
+    uploadIndex?: string;
+    externalId?: string;
+}
+
 export async function apiSubmitEfactura(params: SubmitEfacturaParams): Promise<string> {
-    const options = {
-        method: 'POST',
-        url: `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/efactura/submitted`,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
-        body: {
-            externalId: params.invoiceId,
-        },
-        json: true,
+    const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/efactura/submitted`;
+
+    const body = {
+        externalId: params.invoiceId,
     };
 
-    return new Promise((resolve, reject) => {
-        request(options, (error, response, body) => {
-            const errorMessage = error || body?.Message;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while submitting invoice to eFactura (${params.invoiceId}): ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            resolve(body.uploadIndex || body.externalId || 'SUBMITTED');
+    try {
+        const response = await axios.post<EfacturaResponse>(url, body, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 30000,
         });
-    });
+
+        return response.data.uploadIndex || response.data.externalId || 'SUBMITTED';
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(
+            `Error encountered while submitting invoice to eFactura (${params.invoiceId}): ${JSON.stringify(errorMessage)}`
+        );
+        throw new KeezApiError(
+            `Failed to submit invoice to eFactura: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }

@@ -1,7 +1,8 @@
 export { KeezApi } from './keezApi';
+export { KeezError, KeezAuthError, KeezApiError } from './errors/KeezError';
 
 // Config
-export { PaymentType } from './config/paymentType.js';
+export { PaymentType } from './config/paymentType';
 export { MeasureUnit } from './config/measureUnit';
 
 // Common DTOs

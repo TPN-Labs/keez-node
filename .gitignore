@@ -116,5 +116,3 @@ dist
 .pnp.*
 
 .idea/
-
-package-lock.json

@@ -1,6 +1,7 @@
-import request = require('request');
+import axios, { AxiosError } from 'axios';
 import { logger } from '../../helpers/logger';
 import { AllInvoicesResponse, ShortInvoiceResponse } from '../../dto/allInvoicesResponse';
+import { KeezApiError } from '../../errors/KeezError';
 import { InvoiceFilterParams } from '../../dto/invoices';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
@@ -18,6 +19,29 @@ interface GetAllInvoicesParams {
     readonly appClientId: string;
     readonly bearerToken: string;
     readonly filterParams?: InvoiceFilterParams;
+}
+
+interface ApiShortInvoice {
+    externalId: string;
+    series: string;
+    number: number;
+    documentDate: number;
+    dueDate: number;
+    status: string;
+    clientName: string;
+    partnerName: string;
+    currencyCode: string;
+    referenceCurrencyCode: string;
+    netAmount: number;
+    vatAmount: number;
+    grossAmount: number;
+}
+
+interface ApiAllInvoicesResponse {
+    first: number;
+    last: number;
+    recordsCount: number;
+    data: ApiShortInvoice[];
 }
 
 /**
@@ -56,47 +80,46 @@ export async function apiGetAllInvoices(params: GetAllInvoicesParams): Promise<A
         }
     }
 
-    const options = {
-        method: 'GET',
-        url,
-        headers: {
-            Authorization: `Bearer ${params.bearerToken}`,
-        },
-    };
-    return new Promise((resolve, reject) => {
-        request(options, (error, response, body) => {
-            const errorMessage = error || response.body;
-            if (error || response.statusCode !== 200) {
-                keezLogger.error(`Error encountered while getting all invoices: ${errorMessage}`);
-                reject(errorMessage);
-                throw new Error(errorMessage);
-            }
-            const responseObject = JSON.parse(body);
-            const allInvoices: ShortInvoiceResponse[] = [];
-            responseObject.data.forEach((shortInvoice: any) => {
-                allInvoices.push({
-                    externalId: shortInvoice.externalId,
-                    series: shortInvoice.series,
-                    number: shortInvoice.number,
-                    documentDate: shortInvoice.documentDate,
-                    dueDate: shortInvoice.dueDate,
-                    status: shortInvoice.status,
-                    clientName: shortInvoice.clientName,
-                    partnerName: shortInvoice.partnerName,
-                    currencyCode: shortInvoice.currencyCode,
-                    referenceCurrencyCode: shortInvoice.referenceCurrencyCode,
-                    netAmount: shortInvoice.netAmount,
-                    vatAmount: shortInvoice.vatAmount,
-                    grossAmount: shortInvoice.grossAmount,
-                });
-            });
-            const result: AllInvoicesResponse = {
-                first: responseObject.first,
-                last: responseObject.last,
-                recordsCount: responseObject.recordsCount,
-                data: allInvoices,
-            };
-            resolve(result);
+    try {
+        const response = await axios.get<ApiAllInvoicesResponse>(url, {
+            headers: {
+                Authorization: `Bearer ${params.bearerToken}`,
+            },
+            timeout: 30000,
         });
-    });
+
+        const responseObject = response.data;
+        const allInvoices: ShortInvoiceResponse[] = responseObject.data.map(shortInvoice => ({
+            externalId: shortInvoice.externalId,
+            series: shortInvoice.series,
+            number: shortInvoice.number,
+            documentDate: shortInvoice.documentDate,
+            dueDate: shortInvoice.dueDate,
+            status: shortInvoice.status,
+            clientName: shortInvoice.clientName,
+            partnerName: shortInvoice.partnerName,
+            currencyCode: shortInvoice.currencyCode,
+            referenceCurrencyCode: shortInvoice.referenceCurrencyCode,
+            netAmount: shortInvoice.netAmount,
+            vatAmount: shortInvoice.vatAmount,
+            grossAmount: shortInvoice.grossAmount,
+        }));
+
+        const result: AllInvoicesResponse = {
+            first: responseObject.first,
+            last: responseObject.last,
+            recordsCount: responseObject.recordsCount,
+            data: allInvoices,
+        };
+        return result;
+    } catch (error) {
+        const axiosError = error as AxiosError;
+        const errorMessage = axiosError.response?.data || axiosError.message;
+        keezLogger.error(`Error encountered while getting all invoices: ${JSON.stringify(errorMessage)}`);
+        throw new KeezApiError(
+            `Failed to get all invoices: ${JSON.stringify(errorMessage)}`,
+            axiosError.response?.status,
+            error
+        );
+    }
 }
