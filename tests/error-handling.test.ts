@@ -1,8 +1,8 @@
 import nock = require('nock');
-import { KeezApi } from '../src/keezApi';
-import { PaymentType } from '../src/config/paymentType';
-import { MeasureUnit } from '../src/config/measureUnit';
-import { KeezApiError } from '../src/errors/KeezError';
+import { KeezApi } from '@/keezApi';
+import { PaymentType } from '@/config/paymentType';
+import { MeasureUnit } from '@/config/measureUnit';
+import { KeezApiError } from '@/errors/KeezError';
 
 describe('Error Handling Tests', () => {
     let keezApi: KeezApi;

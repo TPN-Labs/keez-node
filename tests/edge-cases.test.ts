@@ -1,7 +1,7 @@
 import nock = require('nock');
-import { KeezApi } from '../src/keezApi';
-import { MeasureUnit } from '../src/config/measureUnit';
-import { PaymentType } from '../src/config/paymentType';
+import { KeezApi } from '@/keezApi';
+import { MeasureUnit } from '@/config/measureUnit';
+import { PaymentType } from '@/config/paymentType';
 
 describe('Edge Cases and Response Variations Tests', () => {
     let keezApi: KeezApi;

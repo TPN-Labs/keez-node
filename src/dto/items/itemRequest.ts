@@ -1,4 +1,4 @@
-import { MeasureUnit } from '../../config/measureUnit';
+import { MeasureUnit } from '@/config/measureUnit';
 
 export interface CreateItemRequest {
     readonly itemName: string;

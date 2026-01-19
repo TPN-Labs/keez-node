@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
-import { logger } from '../../helpers/logger';
-import { InvoiceRequest } from '../../dto/createInvoiceRequest';
-import { KeezApiError } from '../../errors/KeezError';
+import { logger } from '@/helpers/logger';
+import { InvoiceRequest } from '@/dto/createInvoiceRequest';
+import { KeezApiError } from '@/errors/KeezError';
 import {
     HTTP_REQUEST_TIMEOUT_MS,
     DATE_PAD_LENGTH,
@@ -9,8 +9,8 @@ import {
     DECIMAL_RADIX,
     DEFAULT_VAT_AMOUNT,
     DEFAULT_INVOICE_QUANTITY,
-} from '../../config/constants';
-import { MeasureUnit } from '../../config/measureUnit';
+} from '@/config/constants';
+import { MeasureUnit } from '@/config/measureUnit';
 
 const keezLogger = logger.child({
     _library: 'KeezWrapper',

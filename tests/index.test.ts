@@ -1,13 +1,13 @@
 import nock from 'nock';
-import { KeezApi } from '../src/keezApi';
-import { apiGenerateToken } from '../src/api/authorise';
-import { apiGetAllInvoices } from '../src/api/invoices/getAll';
-import { apiGetInvoiceByExternalId } from '../src/api/invoices/view';
-import { apiCreateInvoice } from '../src/api/invoices/create';
-import { apiSendInvoice } from '../src/api/invoices/sendMail';
-import { apiValidateInvoice } from '../src/api/invoices/validate';
-import { PaymentType } from '../src/config/paymentType';
-import { KeezAuthError, KeezApiError } from '../src/errors/KeezError';
+import { KeezApi } from '@/keezApi';
+import { apiGenerateToken } from '@/api/authorise';
+import { apiGetAllInvoices } from '@/api/invoices/getAll';
+import { apiGetInvoiceByExternalId } from '@/api/invoices/view';
+import { apiCreateInvoice } from '@/api/invoices/create';
+import { apiSendInvoice } from '@/api/invoices/sendMail';
+import { apiValidateInvoice } from '@/api/invoices/validate';
+import { PaymentType } from '@/config/paymentType';
+import { KeezAuthError, KeezApiError } from '@/errors/KeezError';
 
 const STAGING_DOMAIN = 'https://staging.keez.ro';
 const LIVE_DOMAIN = 'https://app.keez.ro';

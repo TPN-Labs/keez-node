@@ -1,6 +1,6 @@
 import nock = require('nock');
-import { KeezApi } from '../src/keezApi';
-import { PaymentType } from '../src/config/paymentType';
+import { KeezApi } from '@/keezApi';
+import { PaymentType } from '@/config/paymentType';
 
 describe('Keez API Invoices Extended', () => {
     let keezApi: KeezApi;

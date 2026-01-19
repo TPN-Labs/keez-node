@@ -1,6 +1,6 @@
 import nock = require('nock');
-import { KeezApi } from '../src/keezApi';
-import { MeasureUnit } from '../src/config/measureUnit';
+import { KeezApi } from '@/keezApi';
+import { MeasureUnit } from '@/config/measureUnit';
 
 describe('Keez API Items', () => {
     let keezApi: KeezApi;

@@ -1,4 +1,4 @@
-import { PaginationParams } from '../common/paginationParams';
+import { PaginationParams } from '@/dto/common/paginationParams';
 import { ItemResponse } from './itemResponse';
 
 export interface ItemFilterParams extends PaginationParams {

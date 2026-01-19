@@ -1,8 +1,8 @@
 import axios, { AxiosError } from 'axios';
-import { logger } from '../../helpers/logger';
-import { CreateItemRequest } from '../../dto/items';
-import { KeezApiError } from '../../errors/KeezError';
-import { HTTP_REQUEST_TIMEOUT_MS } from '../../config/constants';
+import { logger } from '@/helpers/logger';
+import { CreateItemRequest } from '@/dto/items';
+import { KeezApiError } from '@/errors/KeezError';
+import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
 

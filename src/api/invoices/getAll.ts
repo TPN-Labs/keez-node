@@ -1,9 +1,9 @@
 import axios, { AxiosError } from 'axios';
-import { logger } from '../../helpers/logger';
-import { AllInvoicesResponse, ShortInvoiceResponse } from '../../dto/allInvoicesResponse';
-import { KeezApiError } from '../../errors/KeezError';
-import { InvoiceFilterParams } from '../../dto/invoices';
-import { HTTP_REQUEST_TIMEOUT_MS } from '../../config/constants';
+import { logger } from '@/helpers/logger';
+import { AllInvoicesResponse, ShortInvoiceResponse } from '@/dto/allInvoicesResponse';
+import { KeezApiError } from '@/errors/KeezError';
+import { InvoiceFilterParams } from '@/dto/invoices';
+import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 

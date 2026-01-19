@@ -1,4 +1,4 @@
-import { PaginationParams } from '../common/paginationParams';
+import { PaginationParams } from '@/dto/common/paginationParams';
 
 export interface InvoiceFilterParams extends PaginationParams {
     readonly status?: string;

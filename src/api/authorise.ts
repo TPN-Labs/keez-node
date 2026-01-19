@@ -1,8 +1,8 @@
 import axios, { AxiosError } from 'axios';
-import { logger } from '../helpers/logger';
-import { AuthResponse } from '../dto/authResponse';
-import { KeezAuthError } from '../errors/KeezError';
-import { HTTP_REQUEST_TIMEOUT_MS, TOKEN_EXPIRY_BUFFER_MS } from '../config/constants';
+import { logger } from '@/helpers/logger';
+import { AuthResponse } from '@/dto/authResponse';
+import { KeezAuthError } from '@/errors/KeezError';
+import { HTTP_REQUEST_TIMEOUT_MS, TOKEN_EXPIRY_BUFFER_MS } from '@/config/constants';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'GenerateToken' });
 

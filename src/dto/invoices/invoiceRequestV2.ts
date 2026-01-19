@@ -1,5 +1,5 @@
-import { PaymentType } from '../../config/paymentType.js';
-import { Partner } from '../createInvoiceRequest';
+import { PaymentType } from '@/config/paymentType';
+import { Partner } from '@/dto/createInvoiceRequest';
 
 export interface InvoiceLineItem {
     readonly itemExternalId: string;
