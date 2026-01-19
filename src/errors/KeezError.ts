@@ -1,4 +1,3 @@
-/* eslint-disable max-classes-per-file */
 export class KeezError extends Error {
     constructor(
         message: string,
