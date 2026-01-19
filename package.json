@@ -1,5 +1,5 @@
 {
-  "name": "keez-invocing",
+  "name": "keez-invoicing",
   "version": "1.0.4",
   "description": "Keez API wrapper using Node",
   "main": "dist/src/index.js",

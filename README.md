@@ -1,13 +1,13 @@
 <p align="center">
  <img width="100px" src="https://raw.githubusercontent.com/TPN-Labs/keez-node/main/.github/images/favicon512x512-npm.png" align="center" alt=":package: keez-node" />
- <h2 align="center">📦 keez-invocing</h2>
+ <h2 align="center">📦 keez-invoicing</h2>
  <p align="center">🚀 A simple npm package for invoicing that wraps around Keez API.</p>
 </p>
 
 # Keez wrapper using Node
 
-[![npm dm](https://img.shields.io/npm/dm/keez-invocing)](https://www.npmjs.com/package/keez-invoicing)
-[![npm dt](https://img.shields.io/npm/dt/keez-invocing)](https://www.npmjs.com/package/keez-invoicing)
+[![npm dm](https://img.shields.io/npm/dm/keez-invoicing)](https://www.npmjs.com/package/keez-invoicing)
+[![npm dt](https://img.shields.io/npm/dt/keez-invoicing)](https://www.npmjs.com/package/keez-invoicing)
 
 ## Getting started
 
@@ -16,7 +16,7 @@ Please consult [Keez API documentation](https://app.keez.ro/help/api/content.htm
 ### Installation
 
 ```bash
-npm install keez-invocing
+npm install keez-invoicing
 ```
 
 #### Initialization

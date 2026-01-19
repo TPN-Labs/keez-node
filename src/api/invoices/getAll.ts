@@ -1,6 +1,7 @@
 import request = require('request');
 import { logger } from '../../helpers/logger';
 import { AllInvoicesResponse, ShortInvoiceResponse } from '../../dto/allInvoicesResponse';
+import { InvoiceFilterParams } from '../../dto/invoices';
 
 const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
 
@@ -9,12 +10,14 @@ const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' }
  * appId - The application ID
  * appClientId - The application client ID
  * bearerToken - The bearer token obtained at the authentication stage
+ * filterParams - Optional filter parameters
  */
 interface GetAllInvoicesParams {
     readonly baseDomain: string;
     readonly appId: string;
     readonly appClientId: string;
     readonly bearerToken: string;
+    readonly filterParams?: InvoiceFilterParams;
 }
 
 /**
@@ -22,9 +25,40 @@ interface GetAllInvoicesParams {
  * @param params - As defined in the interface
  */
 export async function apiGetAllInvoices(params: GetAllInvoicesParams): Promise<AllInvoicesResponse> {
+    let url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices`;
+
+    if (params.filterParams) {
+        const queryParams = new URLSearchParams();
+        if (params.filterParams.offset !== undefined) {
+            queryParams.append('offset', params.filterParams.offset.toString());
+        }
+        if (params.filterParams.count !== undefined) {
+            queryParams.append('count', params.filterParams.count.toString());
+        }
+        if (params.filterParams.status) {
+            queryParams.append('status', params.filterParams.status);
+        }
+        if (params.filterParams.fromDate !== undefined) {
+            queryParams.append('fromDate', params.filterParams.fromDate.toString());
+        }
+        if (params.filterParams.toDate !== undefined) {
+            queryParams.append('toDate', params.filterParams.toDate.toString());
+        }
+        if (params.filterParams.series) {
+            queryParams.append('series', params.filterParams.series);
+        }
+        if (params.filterParams.partnerName) {
+            queryParams.append('partnerName', params.filterParams.partnerName);
+        }
+        const queryString = queryParams.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+    }
+
     const options = {
         method: 'GET',
-        url: `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices`,
+        url,
         headers: {
             Authorization: `Bearer ${params.bearerToken}`,
         },
