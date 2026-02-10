@@ -6,8 +6,20 @@ export interface InvoiceLineItem {
     readonly measureUnitId: number;
     readonly quantity: number;
     readonly unitPrice: number;
-    readonly vatPercent?: number;
+    readonly unitPriceCurrency?: number;
+    readonly vatPercent: number;
+    readonly originalNetAmount: number;
+    readonly originalVatAmount: number;
+    readonly netAmount: number;
+    readonly vatAmount: number;
+    readonly grossAmount: number;
+    readonly exciseAmount?: number;
+    readonly discountType?: 'Percent' | 'Value';
     readonly discountPercent?: number;
+    readonly discountValueOnNet?: boolean;
+    readonly discountNetValue?: number;
+    readonly discountGrossValue?: number;
+    readonly discountVatValue?: number;
     readonly description?: string;
 }
 

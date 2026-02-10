@@ -66,7 +66,10 @@ describe('apiGenerateToken', () => {
         expect(result.expires_in).toBe(3600);
         expect(result.token_type).toBe('Bearer');
         expect(result.scope).toBe('public-api');
+        // expires_at = now + (expires_in * 1000) - buffer
+        // With expires_in=3600, buffer=300000: ~3300000ms in the future
         expect(result.expires_at).toBeGreaterThan(Date.now());
+        expect(result.expires_at).toBeLessThanOrEqual(Date.now() + 3600 * 1000);
     });
 
     test('should throw KeezAuthError on authentication failure', async () => {
@@ -300,7 +303,13 @@ describe('apiCreateInvoice', () => {
             invoice: {
                 series: 'PDI',
                 currencyCode: 'RON',
-                amount: 100,
+                unitPrice: 100,
+                vatPercent: 19,
+                originalNetAmount: 100,
+                originalVatAmount: 19,
+                netAmount: 100,
+                vatAmount: 19,
+                grossAmount: 119,
                 paymentType: PaymentType.BANK_TRANSFER,
                 partner: {
                     addressDetails: 'Test Address',
@@ -337,7 +346,13 @@ describe('apiCreateInvoice', () => {
             invoice: {
                 series: 'PDI',
                 currencyCode: 'RON',
-                amount: 500,
+                unitPrice: 500,
+                vatPercent: 19,
+                originalNetAmount: 2500,
+                originalVatAmount: 475,
+                netAmount: 2500,
+                vatAmount: 475,
+                grossAmount: 2975,
                 paymentType: PaymentType.CARD_ONLINE,
                 partner: {
                     addressDetails: 'Test Address',
@@ -373,7 +388,13 @@ describe('apiCreateInvoice', () => {
             invoice: {
                 series: 'PDI',
                 currencyCode: 'RON',
-                amount: -100,
+                unitPrice: -100,
+                vatPercent: 19,
+                originalNetAmount: -100,
+                originalVatAmount: -19,
+                netAmount: -100,
+                vatAmount: -19,
+                grossAmount: -119,
                 paymentType: PaymentType.BANK_TRANSFER,
                 partner: {
                     addressDetails: 'Test Address',
@@ -524,7 +545,13 @@ describe('KeezApi integration tests', () => {
         const invoiceId = await keezApi.createInvoice({
             series: 'PDI',
             currencyCode: 'RON',
-            amount: 100,
+            unitPrice: 100,
+            vatPercent: 19,
+            originalNetAmount: 100,
+            originalVatAmount: 19,
+            netAmount: 100,
+            vatAmount: 19,
+            grossAmount: 119,
             paymentType: PaymentType.MEAL_VOUCHER,
             partner: {
                 addressDetails: 'Test Address',

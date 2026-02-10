@@ -15,6 +15,7 @@ describe('Error Handling Tests', () => {
             clientEid: clientEid,
             secret: 'test-secret',
             live: false,
+            maxRetries: 0,
         });
     });
 
@@ -73,7 +74,7 @@ describe('Error Handling Tests', () => {
         describe('downloadInvoicePdf', () => {
             it('should throw KeezApiError when PDF download fails', async () => {
                 nock(baseDomain)
-                    .get('/api/v1.0/public-api/invoices/inv-123/pdf')
+                    .get(`/api/v1.0/public-api/${clientEid}/invoices/inv-123/pdf`)
                     .reply(404, { error: 'Invoice not found' });
 
                 await expect(keezApi.downloadInvoicePdf('inv-123')).rejects.toThrow(KeezApiError);
@@ -81,7 +82,7 @@ describe('Error Handling Tests', () => {
 
             it('should throw KeezApiError on server error during PDF download', async () => {
                 nock(baseDomain)
-                    .get('/api/v1.0/public-api/invoices/inv-123/pdf')
+                    .get(`/api/v1.0/public-api/${clientEid}/invoices/inv-123/pdf`)
                     .reply(500, { error: 'PDF generation failed' });
 
                 await expect(keezApi.downloadInvoicePdf('inv-123')).rejects.toThrow(KeezApiError);
@@ -112,6 +113,12 @@ describe('Error Handling Tests', () => {
                         measureUnitId: 1,
                         quantity: 2,
                         unitPrice: 100,
+                        vatPercent: 19,
+                        originalNetAmount: 200,
+                        originalVatAmount: 38,
+                        netAmount: 200,
+                        vatAmount: 38,
+                        grossAmount: 238,
                     },
                 ],
             };

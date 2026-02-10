@@ -23,12 +23,14 @@ npm install keez-invoicing
 
 ### Constructor Options
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `application_id` | `string` | Yes | Application ID from Keez |
-| `client_eid` | `string` | Yes | Client entity ID |
-| `secret` | `string` | Yes | API secret |
-| `live` | `boolean` | Yes | `true` for production (`app.keez.ro`), `false` for staging (`staging.keez.ro`) |
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `applicationId` | `string` | Yes | - | Application ID from Keez |
+| `clientEid` | `string` | Yes | - | Client entity ID |
+| `secret` | `string` | Yes | - | API secret |
+| `live` | `boolean` | Yes | - | `true` for production (`app.keez.ro`), `false` for staging (`staging.keez.ro`) |
+| `logger` | `KeezLogger` | No | no-op | Custom logger implementing the `KeezLogger` interface |
+| `maxRetries` | `number` | No | `3` | Maximum retries for transient failures (429, 5xx). Set to `0` to disable |
 
 ### Initialization
 
@@ -36,40 +38,89 @@ npm install keez-invoicing
 import { KeezApi } from 'keez-invoicing';
 
 const keezApi = new KeezApi({
-    application_id: 'KEEZ_APPLICATION_ID',
-    client_eid: 'KEEZ_CLIENT_ID',
+    applicationId: 'KEEZ_APPLICATION_ID',
+    clientEid: 'KEEZ_CLIENT_ID',
     secret: 'KEEZ_SECRET',
     live: true, // false for staging environment
 });
 ```
 
+### Custom Logger
+
+You can inject any logger that implements the `KeezLogger` interface (`info`, `error`, `warn`, `debug` methods). By default, logging is disabled (no-op).
+
+```ts
+import { KeezApi, KeezLogger } from 'keez-invoicing';
+
+const logger: KeezLogger = {
+    info: (msg, ...meta) => console.log(msg, ...meta),
+    error: (msg, ...meta) => console.error(msg, ...meta),
+    warn: (msg, ...meta) => console.warn(msg, ...meta),
+    debug: (msg, ...meta) => console.debug(msg, ...meta),
+};
+
+const keezApi = new KeezApi({
+    applicationId: 'KEEZ_APPLICATION_ID',
+    clientEid: 'KEEZ_CLIENT_ID',
+    secret: 'KEEZ_SECRET',
+    live: true,
+    logger,
+});
+```
+
+### Retry Behavior
+
+Transient failures (HTTP 429, 500, 502, 503, 504, and network errors) are retried automatically with exponential backoff. The default is 3 retries. You can configure or disable this:
+
+```ts
+const keezApi = new KeezApi({
+    applicationId: 'KEEZ_APPLICATION_ID',
+    clientEid: 'KEEZ_CLIENT_ID',
+    secret: 'KEEZ_SECRET',
+    live: true,
+    maxRetries: 5, // or 0 to disable retries
+});
+```
+
 ## API Reference
+
+The SDK provides two equivalent ways to call any method:
+
+```ts
+// Flat methods (backward-compatible)
+await keezApi.getAllInvoices();
+await keezApi.createItem(item);
+
+// Resource-scoped sub-clients
+await keezApi.invoices.getAll();
+await keezApi.items.create(item);
+```
 
 ### Invoice Methods
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `getAllInvoices(params?)` | `InvoiceFilterParams?` | `Promise<AllInvoicesResponse>` | Get all invoices with optional filtering |
-| `getInvoiceByExternalId(id)` | `string` | `Promise<InvoiceResponse>` | Get invoice by external ID |
-| `createInvoice(params)` | `InvoiceRequest` | `Promise<string>` | Create invoice, returns external ID |
-| `updateInvoice(id, params)` | `string, InvoiceRequestV2` | `Promise<void>` | Update an existing invoice |
-| `deleteInvoice(id)` | `string` | `Promise<void>` | Delete an invoice |
-| `sendInvoice(email, id)` | `string, string` | `Promise<string>` | Send invoice via email |
-| `sendInvoice(emailParams, id)` | `SendInvoiceEmailParams, string` | `Promise<string>` | Send invoice with CC/BCC |
-| `validateInvoice(id)` | `string` | `Promise<string>` | Validate an invoice |
-| `cancelInvoice(id)` | `string` | `Promise<void>` | Cancel an invoice |
-| `submitInvoiceToEfactura(id)` | `string` | `Promise<string>` | Submit invoice to eFactura |
-| `downloadInvoicePdf(id)` | `string` | `Promise<Buffer>` | Download invoice as PDF |
+| Flat method | Sub-client method | Parameters | Returns | Description |
+|-------------|-------------------|------------|---------|-------------|
+| `getAllInvoices(params?)` | `invoices.getAll(params?)` | `InvoiceFilterParams?` | `Promise<AllInvoicesResponse>` | Get all invoices with optional filtering |
+| `getInvoiceByExternalId(id)` | `invoices.getById(id)` | `string` | `Promise<InvoiceResponse>` | Get invoice by external ID |
+| `createInvoice(params)` | `invoices.create(params)` | `InvoiceRequest \| InvoiceRequestV2` | `Promise<string>` | Create invoice, returns external ID |
+| `updateInvoice(id, params)` | `invoices.update(id, params)` | `string, InvoiceRequestV2` | `Promise<void>` | Update an existing invoice |
+| `deleteInvoice(id)` | `invoices.delete(id)` | `string` | `Promise<void>` | Delete an invoice |
+| `sendInvoice(email, id)` | `invoices.sendEmail(email, id)` | `string, string` | `Promise<string>` | Send invoice via email |
+| `sendInvoice(emailParams, id)` | `invoices.sendEmail(emailParams, id)` | `SendInvoiceEmailParams, string` | `Promise<string>` | Send invoice with CC/BCC |
+| `validateInvoice(id)` | `invoices.validate(id)` | `string` | `Promise<string>` | Validate an invoice |
+| `cancelInvoice(id)` | `invoices.cancel(id)` | `string` | `Promise<void>` | Cancel an invoice |
+| `submitInvoiceToEfactura(id)` | `invoices.submitEfactura(id)` | `string` | `Promise<string>` | Submit invoice to eFactura |
+| `downloadInvoicePdf(id)` | `invoices.downloadPdf(id)` | `string` | `Promise<Buffer>` | Download invoice as PDF |
 
 ### Item Methods
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `getAllItems(params?)` | `ItemFilterParams?` | `Promise<AllItemsResponse>` | Get all items with optional filtering |
-| `getItemByExternalId(id)` | `string` | `Promise<ItemResponse>` | Get item by external ID |
-| `createItem(item)` | `CreateItemRequest` | `Promise<string>` | Create item, returns external ID |
-| `updateItem(id, item)` | `string, UpdateItemRequest` | `Promise<void>` | Update an existing item |
-| `patchItem(id, item)` | `string, PatchItemRequest` | `Promise<void>` | Partially update an item |
+| Flat method | Sub-client method | Parameters | Returns | Description |
+|-------------|-------------------|------------|---------|-------------|
+| `getAllItems(params?)` | `items.getAll(params?)` | `ItemFilterParams?` | `Promise<AllItemsResponse>` | Get all items with optional filtering |
+| `getItemByExternalId(id)` | `items.getById(id)` | `string` | `Promise<ItemResponse>` | Get item by external ID |
+| `createItem(item)` | `items.create(item)` | `CreateItemRequest` | `Promise<string>` | Create item, returns external ID |
+| `updateItem(id, item)` | `items.update(id, item)` | `string, UpdateItemRequest` | `Promise<void>` | Update an existing item |
+| `patchItem(id, item)` | `items.patch(id, item)` | `string, PatchItemRequest` | `Promise<void>` | Partially update an item |
 
 ### PaymentType Enum
 
@@ -114,6 +165,10 @@ import {
     KeezApi,
     PaymentType,
     MeasureUnit,
+    // Config
+    KeezConstructor,
+    KeezLogger,
+    noopLogger,
     // Request types
     InvoiceRequest,
     InvoiceRequestV2,
@@ -186,21 +241,66 @@ import {
 | `vatExemptionReason` | `string` | No | VAT exemption reason |
 | `isActive` | `boolean` | No | Is active (default: true) |
 
-### InvoiceRequest
+### InvoiceRequest (v1 -- single item, legacy)
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `series` | `string` | Yes | Invoice series |
 | `currencyCode` | `string` | Yes | Currency code (e.g., 'RON') |
-| `amount` | `number` | Yes | Invoice amount |
+| `unitPrice` | `number` | Yes | Unit price |
 | `paymentType` | `PaymentType` | Yes | Payment type |
 | `partner` | `Partner` | Yes | Partner/client details |
 | `itemId` | `string` | Yes | Item external ID |
-| `documentDate` | `number` | No | Document date (timestamp) |
-| `dueDate` | `number` | No | Due date (timestamp) |
+| `vatPercent` | `number` | Yes | VAT percentage |
+| `originalNetAmount` | `number` | Yes | Original net amount |
+| `originalVatAmount` | `number` | Yes | Original VAT amount |
+| `netAmount` | `number` | Yes | Net amount |
+| `vatAmount` | `number` | Yes | VAT amount |
+| `grossAmount` | `number` | Yes | Gross amount |
+| `documentDate` | `number` | No | Document date (YYYYMMDD) |
+| `dueDate` | `number` | No | Due date (YYYYMMDD) |
 | `measureUnitId` | `number` | No | Measure unit ID |
 | `quantity` | `number` | No | Quantity |
 | `vatOnCollection` | `boolean` | No | VAT on collection |
+
+### InvoiceRequestV2 (multi-item, recommended)
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `series` | `string` | Yes | Invoice series |
+| `documentDate` | `number` | Yes | Document date (YYYYMMDD) |
+| `dueDate` | `number` | Yes | Due date (YYYYMMDD) |
+| `currencyCode` | `string` | Yes | Currency code (e.g., 'RON') |
+| `paymentType` | `PaymentType` | Yes | Payment type |
+| `partner` | `Partner` | Yes | Partner/client details |
+| `items` | `InvoiceLineItem[]` | Yes | Invoice line items |
+| `vatOnCollection` | `boolean` | No | VAT on collection |
+| `exchangeRate` | `number` | No | Exchange rate |
+| `notes` | `string` | No | Invoice notes |
+
+### InvoiceLineItem
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `itemExternalId` | `string` | Yes | Item external ID |
+| `measureUnitId` | `number` | Yes | Measure unit ID |
+| `quantity` | `number` | Yes | Quantity |
+| `unitPrice` | `number` | Yes | Unit price |
+| `vatPercent` | `number` | Yes | VAT percentage |
+| `originalNetAmount` | `number` | Yes | Original net amount |
+| `originalVatAmount` | `number` | Yes | Original VAT amount |
+| `netAmount` | `number` | Yes | Net amount |
+| `vatAmount` | `number` | Yes | VAT amount |
+| `grossAmount` | `number` | Yes | Gross amount |
+| `unitPriceCurrency` | `number` | No | Unit price in currency |
+| `exciseAmount` | `number` | No | Excise amount |
+| `discountType` | `'Percent' \| 'Value'` | No | Discount type |
+| `discountPercent` | `number` | No | Discount percentage |
+| `discountValueOnNet` | `boolean` | No | Discount applied on net |
+| `discountNetValue` | `number` | No | Discount net value |
+| `discountGrossValue` | `number` | No | Discount gross value |
+| `discountVatValue` | `number` | No | Discount VAT value |
+| `description` | `string` | No | Line item description |
 
 ### Partner
 
@@ -226,6 +326,82 @@ import {
 
 ## Examples
 
+### Creating an invoice (v2 -- multi-item, recommended)
+
+```ts
+import { KeezApi, PaymentType } from 'keez-invoicing';
+
+const keezApi = new KeezApi({
+    applicationId: 'KEEZ_APPLICATION_ID',
+    clientEid: 'KEEZ_CLIENT_ID',
+    secret: 'KEEZ_SECRET',
+    live: true,
+});
+
+const invoiceId = await keezApi.createInvoice({
+    series: 'INV',
+    documentDate: 20250101,
+    dueDate: 20250115,
+    currencyCode: 'RON',
+    paymentType: PaymentType.BANK_TRANSFER,
+    partner: {
+        isLegalPerson: false,
+        partnerName: 'John Doe',
+        countryCode: 'RO',
+        countryName: 'Romania',
+        countyCode: 'RO.B',
+        countyName: 'Bucuresti',
+        cityName: 'Bucharest',
+        addressDetails: 'Str. Comerciala nr. 4',
+        identificationNumber: '1234',
+    },
+    items: [
+        {
+            itemExternalId: 'KEEZ_ITEM_ID',
+            measureUnitId: 1,
+            quantity: 2,
+            unitPrice: 200,
+            vatPercent: 19,
+            originalNetAmount: 400,
+            originalVatAmount: 76,
+            netAmount: 400,
+            vatAmount: 76,
+            grossAmount: 476,
+        },
+    ],
+});
+console.log(`Created invoice with external ID: ${invoiceId}`);
+```
+
+### Creating an invoice (v1 -- single item, legacy)
+
+```ts
+const invoiceId = await keezApi.createInvoice({
+    series: 'INV',
+    currencyCode: 'RON',
+    unitPrice: 400,
+    vatPercent: 19,
+    originalNetAmount: 400,
+    originalVatAmount: 76,
+    netAmount: 400,
+    vatAmount: 76,
+    grossAmount: 476,
+    itemId: 'KEEZ_ITEM_ID',
+    partner: {
+        isLegalPerson: false,
+        partnerName: 'John Doe',
+        countryCode: 'RO',
+        countryName: 'Romania',
+        countyCode: 'RO.B',
+        countyName: 'Bucuresti',
+        cityName: 'Bucharest',
+        addressDetails: 'Str. Comerciala nr. 4',
+        identificationNumber: '1234',
+    },
+    paymentType: PaymentType.BANK_TRANSFER,
+});
+```
+
 ### Getting all invoices with filtering
 
 ```ts
@@ -236,8 +412,8 @@ console.log(`Total invoices: ${invoices.recordsCount}`);
 // Get invoices with filters
 const filteredInvoices = await keezApi.getAllInvoices({
     status: 'VALIDATED',
-    fromDate: 20240101,
-    toDate: 20241231,
+    fromDate: 20250101,
+    toDate: 20251231,
     offset: 0,
     count: 50,
 });
@@ -250,32 +426,6 @@ const invoice = await keezApi.getInvoiceByExternalId('invoice-external-id');
 console.log(`Invoice: ${invoice.series}-${invoice.number}`);
 console.log(`Status: ${invoice.status}`);
 console.log(`Amount: ${invoice.grossAmount} ${invoice.currencyCode}`);
-```
-
-### Creating an invoice
-
-```ts
-import { KeezApi, PaymentType } from 'keez-invoicing';
-
-const result = await keezApi.createInvoice({
-    amount: 400,
-    currencyCode: 'RON',
-    itemId: 'KEEZ_ITEM_ID',
-    partner: {
-        isLegalPerson: false,
-        partnerName: 'John Doe',
-        countryName: 'Romania',
-        countryCode: 'RO',
-        countyCode: 'RO.B',
-        countyName: 'Bucuresti',
-        addressDetails: 'Str. Comerciala nr. 4',
-        cityName: 'Bucharest',
-        identificationNumber: '1234',
-    },
-    paymentType: PaymentType.BANK_TRANSFER,
-    series: 'INV',
-});
-console.log(`Created invoice with external ID: ${result}`);
 ```
 
 ### Sending invoice via email with CC/BCC
@@ -319,6 +469,27 @@ const item = await keezApi.getItemByExternalId(itemId);
 await keezApi.patchItem(itemId, { unitPrice: 175 });
 ```
 
+### Using resource-scoped sub-clients
+
+```ts
+// Invoices
+const invoices = await keezApi.invoices.getAll({ status: 'VALIDATED' });
+const invoice = await keezApi.invoices.getById('invoice-external-id');
+await keezApi.invoices.validate('invoice-external-id');
+await keezApi.invoices.submitEfactura('invoice-external-id');
+const pdf = await keezApi.invoices.downloadPdf('invoice-external-id');
+
+// Items
+const allItems = await keezApi.items.getAll();
+const newItemId = await keezApi.items.create({
+    itemName: 'Widget',
+    measureUnitId: MeasureUnit.PIECE,
+    unitPrice: 50,
+    vatPercent: 19,
+});
+await keezApi.items.patch(newItemId, { unitPrice: 55 });
+```
+
 ### Invoice lifecycle operations
 
 ```ts
@@ -342,7 +513,7 @@ await keezApi.deleteInvoice('invoice-external-id');
 ### Error handling
 
 ```ts
-import { KeezApi, KeezAuthError, KeezApiError } from 'keez-invoicing';
+import { KeezAuthError, KeezApiError } from 'keez-invoicing';
 
 try {
     const invoices = await keezApi.getAllInvoices();
@@ -363,4 +534,4 @@ Contributions, issues and feature requests are welcome!
 
 ## License
 
-Copyright © 2023 - 2026 [TPN LABS](https://tpn-labs.com) - All rights reserved. This project is [MIT](LICENSE) licensed.
+Copyright 2023 - 2026 [TPN LABS](https://tpn-labs.com) - All rights reserved. This project is [BSD-3-Clause](LICENSE) licensed.

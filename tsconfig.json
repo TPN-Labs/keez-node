@@ -17,16 +17,15 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
+    "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": false,
-    "inlineSourceMap": true,
-    "inlineSources": true,
+    "sourceMap": true,
     "experimentalDecorators": true,
-    "strictPropertyInitialization": false,
     "skipLibCheck": true,
     "typeRoots": [
       "./node_modules/@types"
@@ -35,6 +34,8 @@
   "exclude": [
     "node_modules",
     "build",
-    "dist"
+    "dist",
+    "index.mjs",
+    "index.d.mts"
   ]
 }

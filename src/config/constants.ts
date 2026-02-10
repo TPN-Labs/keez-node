@@ -20,5 +20,4 @@ export const MONTH_INDEX_OFFSET = 1; // JavaScript months are 0-indexed
 export const DECIMAL_RADIX = 10;
 
 // Invoice defaults
-export const DEFAULT_VAT_AMOUNT = 0;
 export const DEFAULT_INVOICE_QUANTITY = 1;

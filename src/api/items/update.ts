@@ -1,10 +1,9 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { UpdateItemRequest } from '@/dto/items';
 import { KeezApiError } from '@/errors/KeezError';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
-
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
 interface UpdateItemParams {
     readonly baseDomain: string;
@@ -13,9 +12,13 @@ interface UpdateItemParams {
     readonly bearerToken: string;
     readonly itemId: string;
     readonly item: UpdateItemRequest;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
 export async function apiUpdateItem(params: UpdateItemParams): Promise<void> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items/${params.itemId}`;
 
     const body = {
@@ -31,7 +34,7 @@ export async function apiUpdateItem(params: UpdateItemParams): Promise<void> {
     };
 
     try {
-        await axios.put(url, body, {
+        await client.put(url, body, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
@@ -39,13 +42,15 @@ export async function apiUpdateItem(params: UpdateItemParams): Promise<void> {
             timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while updating item (${params.itemId}): ${JSON.stringify(errorMessage)}`);
-        throw new KeezApiError(
-            `Failed to update item: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error updating item (${params.itemId}): ${safeStringify(errorMessage)}`);
+            throw new KeezApiError(
+                `Failed to update item: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to update item: ${safeStringify(error)}`, undefined, error);
     }
 }

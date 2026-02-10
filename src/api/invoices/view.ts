@@ -1,24 +1,18 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { InvoiceResponse, Item } from '@/dto/invoiceResponse';
 import { KeezApiError } from '@/errors/KeezError';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
-
-/**
- * baseDomain - The base domain for the API
- * appId - The application ID
- * appClientId - The application client ID
- * bearerToken - The bearer token obtained at the authentication stage
- * invoiceId - The invoice ID
- */
 interface ViewInvoiceParams {
     readonly baseDomain: string;
     readonly appId: string;
     readonly appClientId: string;
     readonly bearerToken: string;
     readonly invoiceId: string;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
 interface ApiInvoiceItem {
@@ -80,16 +74,13 @@ interface ApiInvoiceResponse {
     vatOnCollection: boolean;
 }
 
-/**
- * Get an invoice by external ID
- * @param params as defined in the interface
- * @returns {Promise<InvoiceResponse>} - The invoice details
- */
 export async function apiGetInvoiceByExternalId(params: ViewInvoiceParams): Promise<InvoiceResponse> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/${params.invoiceId}`;
 
     try {
-        const response = await axios.get<ApiInvoiceResponse>(url, {
+        const response = await client.get<ApiInvoiceResponse>(url, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
             },
@@ -121,7 +112,7 @@ export async function apiGetInvoiceByExternalId(params: ViewInvoiceParams): Prom
             exciseAmount: item.exciseAmount,
         }));
 
-        const result: InvoiceResponse = {
+        return {
             currencyCode: responseObject.currencyCode,
             discountGrossValue: responseObject.discountGrossValue,
             discountNetValue: responseObject.discountNetValue,
@@ -155,17 +146,16 @@ export async function apiGetInvoiceByExternalId(params: ViewInvoiceParams): Prom
             vatAmount: responseObject.vatAmount,
             vatOnCollection: responseObject.vatOnCollection,
         };
-        return result;
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(
-            `Error encountered while getting invoice details (id: ${params.invoiceId}): ${JSON.stringify(errorMessage)}`
-        );
-        throw new KeezApiError(
-            `Failed to get invoice details: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error getting invoice (id: ${params.invoiceId}): ${safeStringify(errorMessage)}`);
+            throw new KeezApiError(
+                `Failed to get invoice details: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to get invoice details: ${safeStringify(error)}`, undefined, error);
     }
 }

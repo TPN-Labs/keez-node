@@ -1,10 +1,9 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { AllItemsResponse, ItemFilterParams, ItemResponse } from '@/dto/items';
 import { KeezApiError } from '@/errors/KeezError';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
-
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
 interface GetAllItemsParams {
     readonly baseDomain: string;
@@ -12,6 +11,8 @@ interface GetAllItemsParams {
     readonly appClientId: string;
     readonly bearerToken: string;
     readonly filterParams?: ItemFilterParams;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
 interface ApiItemResponse {
@@ -38,6 +39,8 @@ interface ApiAllItemsResponse {
 }
 
 export async function apiGetAllItems(params: GetAllItemsParams): Promise<AllItemsResponse> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     let url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items`;
 
     if (params.filterParams) {
@@ -64,7 +67,7 @@ export async function apiGetAllItems(params: GetAllItemsParams): Promise<AllItem
     }
 
     try {
-        const response = await axios.get<ApiAllItemsResponse>(url, {
+        const response = await client.get<ApiAllItemsResponse>(url, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
             },
@@ -88,21 +91,22 @@ export async function apiGetAllItems(params: GetAllItemsParams): Promise<AllItem
             updatedAt: item.updatedAt,
         }));
 
-        const result: AllItemsResponse = {
+        return {
             first: responseObject.first,
             last: responseObject.last,
             recordsCount: responseObject.recordsCount,
             data: allItems,
         };
-        return result;
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while getting all items: ${JSON.stringify(errorMessage)}`);
-        throw new KeezApiError(
-            `Failed to get all items: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error getting all items: ${safeStringify(errorMessage)}`);
+            throw new KeezApiError(
+                `Failed to get all items: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to get all items: ${safeStringify(error)}`, undefined, error);
     }
 }

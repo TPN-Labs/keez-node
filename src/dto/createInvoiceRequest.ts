@@ -17,21 +17,51 @@ export interface InvoiceDetail {
     measureUnitId: number;
     quantity: number;
     unitPrice: number;
+    unitPriceCurrency: number;
+    vatPercent: number;
+    originalNetAmount: number;
+    originalVatAmount: number;
     netAmount: number;
     vatAmount: number;
     grossAmount: number;
+    exciseAmount: number;
+    itemName?: string;
+    itemDescription?: string;
+    discountType?: 'Percent' | 'Value';
+    discountPercent?: number;
+    discountValueOnNet?: boolean;
+    discountNetValue?: number;
+    discountGrossValue?: number;
+    discountVatValue?: number;
+    originalNetAmountCurrency?: number;
+    originalVatAmountCurrency?: number;
+    discountNetValueCurrency?: number;
+    discountGrossValueCurrency?: number;
+    discountVatValueCurrency?: number;
+    netAmountCurrency?: number;
+    vatAmountCurrency?: number;
+    grossAmountCurrency?: number;
+    exciseAmountCurrency?: number;
 }
 
 export interface InvoiceRequest {
-    series: string;
     currencyCode: string;
-    amount: number;
-    paymentType: PaymentType;
-    partner: Partner;
-    itemId: string;
     documentDate?: number;
     dueDate?: number;
+    itemId: string;
     measureUnitId?: number;
+    partner: Partner;
+    paymentType: PaymentType;
     quantity?: number;
+    series: string;
+    unitPrice: number;
+    unitPriceCurrency?: number;
+    vatPercent: number;
+    originalNetAmount: number;
+    originalVatAmount: number;
+    netAmount: number;
+    vatAmount: number;
+    grossAmount: number;
+    exciseAmount?: number;
     vatOnCollection?: boolean;
 }

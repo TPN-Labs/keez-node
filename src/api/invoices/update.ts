@@ -1,10 +1,9 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { InvoiceRequestV2 } from '@/dto/invoices';
 import { KeezApiError } from '@/errors/KeezError';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
-
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
 interface UpdateInvoiceParams {
     readonly baseDomain: string;
@@ -13,9 +12,13 @@ interface UpdateInvoiceParams {
     readonly bearerToken: string;
     readonly invoiceId: string;
     readonly invoice: InvoiceRequestV2;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
 export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<void> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/${params.invoiceId}`;
 
     const invoiceDetails = params.invoice.items.map(item => ({
@@ -23,8 +26,20 @@ export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<voi
         measureUnitId: item.measureUnitId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
+        unitPriceCurrency: item.unitPriceCurrency ?? item.unitPrice,
         vatPercent: item.vatPercent,
+        originalNetAmount: item.originalNetAmount,
+        originalVatAmount: item.originalVatAmount,
+        netAmount: item.netAmount,
+        vatAmount: item.vatAmount,
+        grossAmount: item.grossAmount,
+        exciseAmount: item.exciseAmount ?? 0,
+        discountType: item.discountType,
         discountPercent: item.discountPercent,
+        discountValueOnNet: item.discountValueOnNet,
+        discountNetValue: item.discountNetValue,
+        discountGrossValue: item.discountGrossValue,
+        discountVatValue: item.discountVatValue,
         description: item.description,
     }));
 
@@ -52,7 +67,7 @@ export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<voi
     };
 
     try {
-        await axios.put(url, body, {
+        await client.put(url, body, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
@@ -60,15 +75,15 @@ export async function apiUpdateInvoice(params: UpdateInvoiceParams): Promise<voi
             timeout: HTTP_REQUEST_TIMEOUT_MS,
         });
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(
-            `Error encountered while updating invoice (${params.invoiceId}): ${JSON.stringify(errorMessage)}`
-        );
-        throw new KeezApiError(
-            `Failed to update invoice: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error updating invoice (${params.invoiceId}): ${safeStringify(errorMessage)}`);
+            throw new KeezApiError(
+                `Failed to update invoice: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to update invoice: ${safeStringify(error)}`, undefined, error);
     }
 }

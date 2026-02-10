@@ -1,25 +1,19 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { AllInvoicesResponse, ShortInvoiceResponse } from '@/dto/allInvoicesResponse';
 import { KeezApiError } from '@/errors/KeezError';
 import { InvoiceFilterParams } from '@/dto/invoices';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
-
-/**
- * baseDomain - The base domain for the API
- * appId - The application ID
- * appClientId - The application client ID
- * bearerToken - The bearer token obtained at the authentication stage
- * filterParams - Optional filter parameters
- */
 interface GetAllInvoicesParams {
     readonly baseDomain: string;
     readonly appId: string;
     readonly appClientId: string;
     readonly bearerToken: string;
     readonly filterParams?: InvoiceFilterParams;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
 interface ApiShortInvoice {
@@ -45,11 +39,9 @@ interface ApiAllInvoicesResponse {
     data: ApiShortInvoice[];
 }
 
-/**
- * Get all invoices
- * @param params - As defined in the interface
- */
 export async function apiGetAllInvoices(params: GetAllInvoicesParams): Promise<AllInvoicesResponse> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     let url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices`;
 
     if (params.filterParams) {
@@ -82,7 +74,7 @@ export async function apiGetAllInvoices(params: GetAllInvoicesParams): Promise<A
     }
 
     try {
-        const response = await axios.get<ApiAllInvoicesResponse>(url, {
+        const response = await client.get<ApiAllInvoicesResponse>(url, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
             },
@@ -106,21 +98,22 @@ export async function apiGetAllInvoices(params: GetAllInvoicesParams): Promise<A
             grossAmount: shortInvoice.grossAmount,
         }));
 
-        const result: AllInvoicesResponse = {
+        return {
             first: responseObject.first,
             last: responseObject.last,
             recordsCount: responseObject.recordsCount,
             data: allInvoices,
         };
-        return result;
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while getting all invoices: ${JSON.stringify(errorMessage)}`);
-        throw new KeezApiError(
-            `Failed to get all invoices: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error getting all invoices: ${safeStringify(errorMessage)}`);
+            throw new KeezApiError(
+                `Failed to get all invoices: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to get all invoices: ${safeStringify(error)}`, undefined, error);
     }
 }

@@ -167,13 +167,14 @@ describe('Additional Coverage Tests', () => {
 
         it('should handle network error in apiDownloadInvoicePdf', async () => {
             nock(baseDomain)
-                .get('/api/v1.0/public-api/invoices/inv-123/pdf')
+                .get(`/api/v1.0/public-api/${clientEid}/invoices/inv-123/pdf`)
                 .replyWithError('DNS resolution failed');
 
             await expect(
                 apiDownloadInvoicePdf({
                     baseDomain,
                     appId: 'test-app-id',
+                    appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
                 })
@@ -215,6 +216,12 @@ describe('Additional Coverage Tests', () => {
                                 measureUnitId: 1,
                                 quantity: 1,
                                 unitPrice: 100,
+                                vatPercent: 19,
+                                originalNetAmount: 100,
+                                originalVatAmount: 19,
+                                netAmount: 100,
+                                vatAmount: 19,
+                                grossAmount: 119,
                             },
                         ],
                     },
