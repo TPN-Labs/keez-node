@@ -189,7 +189,7 @@ describe('Keez API Invoices Extended', () => {
             const pdfBuffer = Buffer.from('PDF content');
 
             nock(baseDomain)
-                .get('/api/v1.0/public-api/invoices/inv-123/pdf')
+                .get(`/api/v1.0/public-api/${clientEid}/invoices/inv-123/pdf`)
                 .reply(200, pdfBuffer);
 
             const result = await keezApi.downloadInvoicePdf('inv-123');

@@ -4,6 +4,10 @@ export { KeezError, KeezAuthError, KeezApiError } from './errors/KeezError';
 // Config
 export { PaymentType } from './config/paymentType';
 export { MeasureUnit } from './config/measureUnit';
+export { KeezConstructor } from './config/constructorParam';
+
+// Logger
+export { KeezLogger, noopLogger } from './helpers/keezLogger';
 
 // Common DTOs
 export { PaginationParams } from './dto/common';

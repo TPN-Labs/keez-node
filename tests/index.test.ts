@@ -66,7 +66,10 @@ describe('apiGenerateToken', () => {
         expect(result.expires_in).toBe(3600);
         expect(result.token_type).toBe('Bearer');
         expect(result.scope).toBe('public-api');
+        // expires_at = now + (expires_in * 1000) - buffer
+        // With expires_in=3600, buffer=300000: ~3300000ms in the future
         expect(result.expires_at).toBeGreaterThan(Date.now());
+        expect(result.expires_at).toBeLessThanOrEqual(Date.now() + 3600 * 1000);
     });
 
     test('should throw KeezAuthError on authentication failure', async () => {

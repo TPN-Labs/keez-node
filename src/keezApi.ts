@@ -1,3 +1,4 @@
+import { AxiosInstance } from 'axios';
 import { KeezConstructor } from './config/constructorParam';
 import { apiGenerateToken } from './api/authorise';
 import { apiGetAllInvoices } from './api/invoices/getAll';
@@ -12,7 +13,6 @@ import { apiSubmitEfactura } from './api/invoices/submitEfactura';
 import { apiCancelInvoice } from './api/invoices/cancel';
 import { apiDownloadInvoicePdf } from './api/invoices/downloadPdf';
 import { AuthResponse } from './dto/authResponse';
-import { logger } from './helpers/logger';
 import { InvoiceFilterParams, InvoiceRequestV2, SendInvoiceEmailParams } from './dto/invoices';
 import { apiGetAllItems, apiGetItemById, apiCreateItem, apiUpdateItem, apiPatchItem } from './api/items';
 import {
@@ -23,313 +23,320 @@ import {
     PatchItemRequest,
     UpdateItemRequest,
 } from './dto/items';
-
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Main' });
+import { KeezLogger, noopLogger } from './helpers/keezLogger';
+import { createHttpClient } from './http/createHttpClient';
 
 export class KeezApi {
     private readonly appId: string;
     private readonly apiSecret: string;
     private readonly apiClientId: string;
     private authResponse: AuthResponse | null = null;
-    private authToken: string;
+    private authToken: string | null = null;
     private isLive: boolean;
+    private readonly logger: KeezLogger;
+    private readonly httpClient: AxiosInstance;
+    private refreshPromise: Promise<void> | null = null;
+
+    public readonly invoices: InvoiceClient;
+    public readonly items: ItemClient;
 
     constructor(params: KeezConstructor) {
         this.appId = params.applicationId;
         this.apiSecret = params.secret;
         this.apiClientId = params.clientEid;
         this.isLive = params.live;
+        this.logger = params.logger ?? noopLogger;
+        this.httpClient = createHttpClient({
+            logger: this.logger,
+            maxRetries: params.maxRetries,
+        });
+        this.invoices = new InvoiceClient(this);
+        this.items = new ItemClient(this);
     }
 
     /**
      * Get the base domain for the API
-     * @returns {string} - The base domain
      */
     public getBaseDomain(): string {
         return this.isLive ? 'https://app.keez.ro' : 'https://staging.keez.ro';
     }
 
-    private async checkIfTokenIsValid() {
-        if (!this.authToken || !this.authResponse || this.authResponse.expires_at < Date.now()) {
-            keezLogger.info('Token is invalid, generating a new one');
-            await this.generateToken();
+    /**
+     * Set live mode. Clears any cached auth tokens to prevent
+     * a staging token from being used against production.
+     */
+    public setLive(mode: boolean) {
+        if (this.isLive !== mode) {
+            this.isLive = mode;
+            this.authResponse = null;
+            this.authToken = null;
         }
     }
 
-    private async generateToken() {
+    /** @internal */
+    async ensureValidToken(): Promise<string> {
+        if (!this.authToken || !this.authResponse || this.authResponse.expires_at < Date.now()) {
+            this.logger.info('Token is invalid or expired, refreshing');
+            await this.refreshToken();
+        }
+        return this.authToken!;
+    }
+
+    private async refreshToken(): Promise<void> {
+        // Mutex: if a refresh is already in progress, wait for it instead of firing another
+        if (this.refreshPromise) {
+            await this.refreshPromise;
+            return;
+        }
+
+        this.refreshPromise = this.doRefreshToken();
+        try {
+            await this.refreshPromise;
+        } finally {
+            this.refreshPromise = null;
+        }
+    }
+
+    private async doRefreshToken(): Promise<void> {
         const authResponse = await apiGenerateToken({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
             apiSecret: this.apiSecret,
+            logger: this.logger,
         });
         this.authResponse = authResponse;
         this.authToken = authResponse.access_token;
     }
 
-    /**
-     * Set live mode
-     *
-     * @param {boolean} mode - `False` will use the staging mode and `True` will use the production mode
-     */
-    public setLive(mode: boolean) {
-        this.isLive = mode;
-    }
-
-    // ==================== INVOICE METHODS ====================
-
-    /**
-     * Get all invoices with optional filtering and pagination
-     * @param params - Optional filter parameters
-     */
-    public async getAllInvoices(params?: InvoiceFilterParams) {
-        await this.checkIfTokenIsValid();
-        return apiGetAllInvoices({
+    /** @internal */
+    getCommonParams() {
+        return {
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
             appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            bearerToken: this.authToken!,
+            httpClient: this.httpClient,
+            logger: this.logger,
+        };
+    }
+
+    // ==================== INVOICE METHODS (kept for backward compatibility) ====================
+
+    public async getAllInvoices(params?: InvoiceFilterParams) {
+        await this.ensureValidToken();
+        return apiGetAllInvoices({
+            ...this.getCommonParams(),
             filterParams: params,
         });
     }
 
-    /**
-     * Get an invoice by its external ID
-     * @param invoiceExternalId - The external ID of the invoice
-     */
     public async getInvoiceByExternalId(invoiceExternalId: string) {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiGetInvoiceByExternalId({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId: invoiceExternalId,
         });
     }
 
-    /**
-     * Send an invoice via email
-     * @param email - The recipient email address
-     * @param invoiceExternalId - The external ID of the invoice
-     */
     public async sendInvoice(email: string, invoiceExternalId: string): Promise<string>;
-    /**
-     * Send an invoice via email with CC/BCC support
-     * @param emailParams - Email parameters including to, cc, and bcc
-     * @param invoiceExternalId - The external ID of the invoice
-     */
     public async sendInvoice(emailParams: SendInvoiceEmailParams, invoiceExternalId: string): Promise<string>;
     public async sendInvoice(
         emailOrParams: string | SendInvoiceEmailParams,
         invoiceExternalId: string
     ): Promise<string> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         if (typeof emailOrParams === 'string') {
             return apiSendInvoice({
-                baseDomain: this.getBaseDomain(),
-                appId: this.appId,
-                bearerToken: this.authToken,
+                ...this.getCommonParams(),
                 clientMail: emailOrParams,
                 invoiceId: invoiceExternalId,
             });
         }
         return apiSendInvoice({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             emailParams: emailOrParams,
             invoiceId: invoiceExternalId,
         });
     }
 
     /**
-     * Create a new invoice
-     * @param invoiceParams - The invoice parameters
+     * Create a new invoice. Accepts both v1 (single-item) and v2 (multi-item) formats.
+     * @deprecated Use `InvoiceRequestV2` with the `items` array for new code.
      */
-    public async createInvoice(invoiceParams: InvoiceRequest) {
-        await this.checkIfTokenIsValid();
+    public async createInvoice(invoiceParams: InvoiceRequest): Promise<string>;
+    public async createInvoice(invoiceParams: InvoiceRequestV2): Promise<string>;
+    public async createInvoice(invoiceParams: InvoiceRequest | InvoiceRequestV2) {
+        await this.ensureValidToken();
         return apiCreateInvoice({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoice: invoiceParams,
         });
     }
 
-    /**
-     * Validate an invoice
-     * @param invoiceExternalId - The external ID of the invoice
-     */
     public async validateInvoice(invoiceExternalId: string) {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiValidateInvoice({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId: invoiceExternalId,
         });
     }
 
-    /**
-     * Update an existing invoice
-     * @param invoiceId - The external ID of the invoice to update
-     * @param invoice - The updated invoice data
-     */
     public async updateInvoice(invoiceId: string, invoice: InvoiceRequestV2): Promise<void> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiUpdateInvoice({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId,
             invoice,
         });
     }
 
-    /**
-     * Delete an invoice
-     * @param invoiceId - The external ID of the invoice to delete
-     */
     public async deleteInvoice(invoiceId: string): Promise<void> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiDeleteInvoice({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId,
         });
     }
 
-    /**
-     * Submit an invoice to eFactura (Romanian electronic invoicing system)
-     * @param invoiceId - The external ID of the invoice to submit
-     * @returns The upload index or confirmation from eFactura
-     */
     public async submitInvoiceToEfactura(invoiceId: string): Promise<string> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiSubmitEfactura({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId,
         });
     }
 
-    /**
-     * Cancel an invoice
-     * @param invoiceId - The external ID of the invoice to cancel
-     */
     public async cancelInvoice(invoiceId: string): Promise<void> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiCancelInvoice({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId,
         });
     }
 
-    /**
-     * Download an invoice as PDF
-     * @param invoiceId - The external ID of the invoice
-     * @returns Buffer containing the PDF data
-     */
     public async downloadInvoicePdf(invoiceId: string): Promise<Buffer> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiDownloadInvoicePdf({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             invoiceId,
         });
     }
 
-    // ==================== ITEM METHODS ====================
+    // ==================== ITEM METHODS (kept for backward compatibility) ====================
 
-    /**
-     * Get all items with optional filtering and pagination
-     * @param params - Optional filter parameters
-     */
     public async getAllItems(params?: ItemFilterParams): Promise<AllItemsResponse> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiGetAllItems({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             filterParams: params,
         });
     }
 
-    /**
-     * Get an item by its external ID
-     * @param itemId - The external ID of the item
-     */
     public async getItemByExternalId(itemId: string): Promise<ItemResponse> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiGetItemById({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             itemId,
         });
     }
 
-    /**
-     * Create a new item
-     * @param item - The item data to create
-     * @returns The external ID of the created item
-     */
     public async createItem(item: CreateItemRequest): Promise<string> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiCreateItem({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             item,
         });
     }
 
-    /**
-     * Update an existing item (full replacement)
-     * @param itemId - The external ID of the item to update
-     * @param item - The updated item data
-     */
     public async updateItem(itemId: string, item: UpdateItemRequest): Promise<void> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiUpdateItem({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             itemId,
             item,
         });
     }
 
-    /**
-     * Partially update an existing item
-     * @param itemId - The external ID of the item to patch
-     * @param item - The fields to update
-     */
     public async patchItem(itemId: string, item: PatchItemRequest): Promise<void> {
-        await this.checkIfTokenIsValid();
+        await this.ensureValidToken();
         return apiPatchItem({
-            baseDomain: this.getBaseDomain(),
-            appId: this.appId,
-            appClientId: this.apiClientId,
-            bearerToken: this.authToken,
+            ...this.getCommonParams(),
             itemId,
             item,
         });
+    }
+}
+
+// ==================== RESOURCE-SCOPED SUB-CLIENTS ====================
+
+class InvoiceClient {
+    constructor(private readonly api: KeezApi) {}
+
+    async getAll(params?: InvoiceFilterParams) {
+        return this.api.getAllInvoices(params);
+    }
+
+    async getById(invoiceExternalId: string) {
+        return this.api.getInvoiceByExternalId(invoiceExternalId);
+    }
+
+    async create(invoiceParams: InvoiceRequest): Promise<string>;
+    async create(invoiceParams: InvoiceRequestV2): Promise<string>;
+    async create(invoiceParams: InvoiceRequest | InvoiceRequestV2) {
+        return this.api.createInvoice(invoiceParams as InvoiceRequest);
+    }
+
+    async update(invoiceId: string, invoice: InvoiceRequestV2): Promise<void> {
+        return this.api.updateInvoice(invoiceId, invoice);
+    }
+
+    async delete(invoiceId: string): Promise<void> {
+        return this.api.deleteInvoice(invoiceId);
+    }
+
+    async validate(invoiceExternalId: string) {
+        return this.api.validateInvoice(invoiceExternalId);
+    }
+
+    async cancel(invoiceId: string): Promise<void> {
+        return this.api.cancelInvoice(invoiceId);
+    }
+
+    async submitEfactura(invoiceId: string): Promise<string> {
+        return this.api.submitInvoiceToEfactura(invoiceId);
+    }
+
+    async sendEmail(email: string, invoiceExternalId: string): Promise<string>;
+    async sendEmail(emailParams: SendInvoiceEmailParams, invoiceExternalId: string): Promise<string>;
+    async sendEmail(emailOrParams: string | SendInvoiceEmailParams, invoiceExternalId: string): Promise<string> {
+        return this.api.sendInvoice(emailOrParams as string, invoiceExternalId);
+    }
+
+    async downloadPdf(invoiceId: string): Promise<Buffer> {
+        return this.api.downloadInvoicePdf(invoiceId);
+    }
+}
+
+class ItemClient {
+    constructor(private readonly api: KeezApi) {}
+
+    async getAll(params?: ItemFilterParams): Promise<AllItemsResponse> {
+        return this.api.getAllItems(params);
+    }
+
+    async getById(itemId: string): Promise<ItemResponse> {
+        return this.api.getItemByExternalId(itemId);
+    }
+
+    async create(item: CreateItemRequest): Promise<string> {
+        return this.api.createItem(item);
+    }
+
+    async update(itemId: string, item: UpdateItemRequest): Promise<void> {
+        return this.api.updateItem(itemId, item);
+    }
+
+    async patch(itemId: string, item: PatchItemRequest): Promise<void> {
+        return this.api.patchItem(itemId, item);
     }
 }

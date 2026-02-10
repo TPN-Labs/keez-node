@@ -1,10 +1,9 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { CreateItemRequest } from '@/dto/items';
 import { KeezApiError } from '@/errors/KeezError';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
-
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Items' });
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
 interface CreateItemParams {
     readonly baseDomain: string;
@@ -12,6 +11,8 @@ interface CreateItemParams {
     readonly appClientId: string;
     readonly bearerToken: string;
     readonly item: CreateItemRequest;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
 interface CreateItemResponse {
@@ -19,6 +20,8 @@ interface CreateItemResponse {
 }
 
 export async function apiCreateItem(params: CreateItemParams): Promise<string> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/items`;
 
     const body = {
@@ -34,7 +37,7 @@ export async function apiCreateItem(params: CreateItemParams): Promise<string> {
     };
 
     try {
-        const response = await axios.post<CreateItemResponse>(url, body, {
+        const response = await client.post<CreateItemResponse>(url, body, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
@@ -44,13 +47,15 @@ export async function apiCreateItem(params: CreateItemParams): Promise<string> {
 
         return response.data.externalId;
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while creating item: ${JSON.stringify(errorMessage)}`);
-        throw new KeezApiError(
-            `Failed to create item: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error creating item: ${safeStringify(errorMessage)}`);
+            throw new KeezApiError(
+                `Failed to create item: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to create item: ${safeStringify(error)}`, undefined, error);
     }
 }

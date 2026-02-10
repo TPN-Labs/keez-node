@@ -1,28 +1,19 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios from 'axios';
 import { AuthResponse } from '@/dto/authResponse';
 import { KeezAuthError } from '@/errors/KeezError';
-import { HTTP_REQUEST_TIMEOUT_MS, TOKEN_EXPIRY_BUFFER_MS } from '@/config/constants';
+import { HTTP_REQUEST_TIMEOUT_MS, TOKEN_EXPIRY_BUFFER_MS, MILLISECONDS_IN_SECOND } from '@/config/constants';
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'GenerateToken' });
-
-/**
- * baseDomain - The base domain for the API
- * appId - The application ID
- * apiSecret - The API secret
- */
 interface GenerateTokenParams {
     readonly baseDomain: string;
     readonly appId: string;
     readonly apiSecret: string;
+    readonly logger?: KeezLogger;
 }
 
-/**
- * Generate a token for the Keez API
- * @returns {AuthResponse} - The token response containing the access token and the expiry time
- * @param params - As defined in the interface
- */
 export async function apiGenerateToken(params: GenerateTokenParams): Promise<AuthResponse> {
+    const log = params.logger ?? noopLogger;
     const url = `${params.baseDomain}/idp/connect/token`;
     const formData = new URLSearchParams({
         client_id: `app${params.appId}`,
@@ -43,18 +34,21 @@ export async function apiGenerateToken(params: GenerateTokenParams): Promise<Aut
         return {
             access_token: responseObject.access_token,
             expires_in: responseObject.expires_in,
-            expires_at: new Date(Date.now() + TOKEN_EXPIRY_BUFFER_MS).getTime(),
+            expires_at:
+                Date.now() + responseObject.expires_in * MILLISECONDS_IN_SECOND - TOKEN_EXPIRY_BUFFER_MS,
             token_type: responseObject.token_type,
             scope: responseObject.scope,
         };
     } catch (error) {
-        const axiosError = error as AxiosError;
-        const errorMessage = axiosError.response?.data || axiosError.message;
-        keezLogger.error(`Error encountered while authenticating: ${JSON.stringify(errorMessage)}`);
-        throw new KeezAuthError(
-            `Authentication failed: ${JSON.stringify(errorMessage)}`,
-            axiosError.response?.status,
-            error
-        );
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data || error.message;
+            log.error(`Error encountered while authenticating: ${safeStringify(errorMessage)}`);
+            throw new KeezAuthError(
+                `Authentication failed: ${safeStringify(errorMessage)}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezAuthError(`Authentication failed: ${safeStringify(error)}`, undefined, error);
     }
 }

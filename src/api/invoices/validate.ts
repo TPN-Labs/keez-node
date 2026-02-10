@@ -1,38 +1,29 @@
-import axios, { AxiosError } from 'axios';
-import { logger } from '@/helpers/logger';
+import axios, { AxiosInstance } from 'axios';
 import { KeezApiError } from '@/errors/KeezError';
 import { HTTP_REQUEST_TIMEOUT_MS } from '@/config/constants';
+import { KeezLogger, noopLogger } from '@/helpers/keezLogger';
+import { safeStringify } from '@/helpers/safeStringify';
 
-const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' });
-
-/**
- * appId - The application ID
- * appClientId - The application client ID
- * baseDomain - The base domain for the API
- * bearerToken - The bearer token obtained at the authentication stage
- * invoiceId - The invoice ID
- */
 interface ValidateInvoiceParams {
     readonly appId: string;
     readonly appClientId: string;
     readonly baseDomain: string;
     readonly bearerToken: string;
     readonly invoiceId: string;
+    readonly httpClient?: AxiosInstance;
+    readonly logger?: KeezLogger;
 }
 
-/**
- * Validate an invoice by external ID
- * @param params - as defined in the interface
- * @returns {Promise<string>} - Returns 'VALIDATED' on success
- */
 export async function apiValidateInvoice(params: ValidateInvoiceParams): Promise<string> {
+    const log = params.logger ?? noopLogger;
+    const client = params.httpClient ?? axios;
     const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/valid`;
     const body = {
         externalId: params.invoiceId,
     };
 
     try {
-        await axios.post(url, body, {
+        await client.post(url, body, {
             headers: {
                 Authorization: `Bearer ${params.bearerToken}`,
                 'Content-Type': 'application/json',
@@ -42,9 +33,16 @@ export async function apiValidateInvoice(params: ValidateInvoiceParams): Promise
 
         return 'VALIDATED';
     } catch (error) {
-        const axiosError = error as AxiosError<{ Message?: string }>;
-        const errorMessage = axiosError.response?.data?.Message || axiosError.message;
-        keezLogger.error(`Error encountered while validating invoice (id: ${params.invoiceId}): ${errorMessage}`);
-        throw new KeezApiError(`Failed to validate invoice: ${errorMessage}`, axiosError.response?.status, error);
+        if (axios.isAxiosError(error)) {
+            const errorMessage =
+                (error.response?.data as { Message?: string })?.Message || error.message;
+            log.error(`Error validating invoice (id: ${params.invoiceId}): ${errorMessage}`);
+            throw new KeezApiError(
+                `Failed to validate invoice: ${errorMessage}`,
+                error.response?.status,
+                error
+            );
+        }
+        throw new KeezApiError(`Failed to validate invoice: ${safeStringify(error)}`, undefined, error);
     }
 }
