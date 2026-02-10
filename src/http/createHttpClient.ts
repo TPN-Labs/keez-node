@@ -29,8 +29,7 @@ export function createHttpClient(options: CreateHttpClientOptions): AxiosInstanc
         config.retryCount = config.retryCount ?? 0;
 
         const isNetworkError = !error.response;
-        const isRetryableStatus =
-            error.response && RETRYABLE_STATUS_CODES.includes(error.response.status);
+        const isRetryableStatus = error.response && RETRYABLE_STATUS_CODES.includes(error.response.status);
 
         const maxRetries = options.maxRetries ?? MAX_RETRIES;
         if ((!isNetworkError && !isRetryableStatus) || config.retryCount >= maxRetries) {

@@ -146,9 +146,7 @@ export async function apiCreateInvoice(params: CreateInvoiceParams): Promise<str
     const client = params.httpClient ?? axios;
     const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices`;
 
-    const body = isV2Invoice(params.invoice)
-        ? buildV2Body(params.invoice)
-        : buildV1Body(params.invoice);
+    const body = isV2Invoice(params.invoice) ? buildV2Body(params.invoice) : buildV1Body(params.invoice);
 
     try {
         const response = await client.post(url, body, {
@@ -162,14 +160,9 @@ export async function apiCreateInvoice(params: CreateInvoiceParams): Promise<str
         return response.data.externalId;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage =
-                (error.response?.data as { Message?: string })?.Message || error.message;
+            const errorMessage = (error.response?.data as { Message?: string })?.Message || error.message;
             log.error(`Error creating invoice: ${errorMessage}`);
-            throw new KeezApiError(
-                `Failed to create invoice: ${errorMessage}`,
-                error.response?.status,
-                error
-            );
+            throw new KeezApiError(`Failed to create invoice: ${errorMessage}`, error.response?.status, error);
         }
         throw new KeezApiError(`Failed to create invoice: ${safeStringify(error)}`, undefined, error);
     }

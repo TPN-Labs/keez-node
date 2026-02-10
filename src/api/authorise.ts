@@ -34,8 +34,7 @@ export async function apiGenerateToken(params: GenerateTokenParams): Promise<Aut
         return {
             access_token: responseObject.access_token,
             expires_in: responseObject.expires_in,
-            expires_at:
-                Date.now() + responseObject.expires_in * MILLISECONDS_IN_SECOND - TOKEN_EXPIRY_BUFFER_MS,
+            expires_at: Date.now() + responseObject.expires_in * MILLISECONDS_IN_SECOND - TOKEN_EXPIRY_BUFFER_MS,
             token_type: responseObject.token_type,
             scope: responseObject.scope,
         };
