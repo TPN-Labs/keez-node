@@ -245,6 +245,7 @@ export class KeezApi {
         return apiDownloadInvoicePdf({
             baseDomain: this.getBaseDomain(),
             appId: this.appId,
+            appClientId: this.apiClientId,
             bearerToken: this.authToken,
             invoiceId,
         });

@@ -8,12 +8,13 @@ const keezLogger = logger.child({ _library: 'KeezWrapper', _method: 'Invoices' }
 interface DownloadPdfParams {
     readonly baseDomain: string;
     readonly appId: string;
+    readonly appClientId: string;
     readonly bearerToken: string;
     readonly invoiceId: string;
 }
 
 export async function apiDownloadInvoicePdf(params: DownloadPdfParams): Promise<Buffer> {
-    const url = `${params.baseDomain}/api/v1.0/public-api/invoices/${params.invoiceId}/pdf`;
+    const url = `${params.baseDomain}/api/v1.0/public-api/${params.appClientId}/invoices/${params.invoiceId}/pdf`;
 
     try {
         const response = await axios.get(url, {

@@ -167,13 +167,14 @@ describe('Additional Coverage Tests', () => {
 
         it('should handle network error in apiDownloadInvoicePdf', async () => {
             nock(baseDomain)
-                .get('/api/v1.0/public-api/invoices/inv-123/pdf')
+                .get('/api/v1.0/public-api/test-client-id/invoices/inv-123/pdf')
                 .replyWithError('DNS resolution failed');
 
             await expect(
                 apiDownloadInvoicePdf({
                     baseDomain,
                     appId: 'test-app-id',
+                    appClientId: 'test-client-id',
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
                 })
