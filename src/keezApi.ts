@@ -35,9 +35,9 @@ export class KeezApi {
     private isLive: boolean;
 
     constructor(params: KeezConstructor) {
-        this.appId = params.application_id;
+        this.appId = params.applicationId;
         this.apiSecret = params.secret;
-        this.apiClientId = params.client_eid;
+        this.apiClientId = params.clientEid;
         this.isLive = params.live;
     }
 

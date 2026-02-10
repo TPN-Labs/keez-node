@@ -9,8 +9,8 @@ describe('Filter Parameters Tests', () => {
 
     beforeAll(() => {
         keezApi = new KeezApi({
-            application_id: 'test-app-id',
-            client_eid: clientEid,
+            applicationId: 'test-app-id',
+            clientEid: clientEid,
             secret: 'test-secret',
             live: false,
         });
