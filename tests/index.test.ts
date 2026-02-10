@@ -17,8 +17,8 @@ describe('KeezApi class', () => {
 
     beforeAll(() => {
         keezApi = new KeezApi({
-            application_id: 'test-app-id',
-            client_eid: 'test-client-eid',
+            applicationId: 'test-app-id',
+            clientEid: 'test-client-eid',
             secret: 'test-secret',
             live: true,
         });
@@ -469,8 +469,8 @@ describe('KeezApi integration tests', () => {
 
     beforeEach(() => {
         keezApi = new KeezApi({
-            application_id: 'test-app-id',
-            client_eid: 'test-client-eid',
+            applicationId: 'test-app-id',
+            clientEid: 'test-client-eid',
             secret: 'test-secret',
             live: false,
         });
