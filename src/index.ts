@@ -9,7 +9,7 @@ export { MeasureUnit } from './config/measureUnit';
 export { PaginationParams } from './dto/common';
 
 // Invoice DTOs
-export { InvoiceRequest, Partner } from './dto/createInvoiceRequest';
+export { InvoiceRequest, InvoiceDetail, Partner } from './dto/createInvoiceRequest';
 export { InvoiceResponse, Item } from './dto/invoiceResponse';
 export { AllInvoicesResponse, ShortInvoiceResponse } from './dto/allInvoicesResponse';
 export { InvoiceFilterParams, SendInvoiceEmailParams, InvoiceRequestV2, InvoiceLineItem } from './dto/invoices';

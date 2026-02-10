@@ -141,6 +141,12 @@ describe('Keez API Invoices Extended', () => {
                         measureUnitId: 1,
                         quantity: 2,
                         unitPrice: 100,
+                        vatPercent: 19,
+                        originalNetAmount: 200,
+                        originalVatAmount: 38,
+                        netAmount: 200,
+                        vatAmount: 38,
+                        grossAmount: 238,
                     },
                 ],
             })).resolves.toBeUndefined();

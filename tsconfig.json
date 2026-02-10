@@ -35,6 +35,8 @@
   "exclude": [
     "node_modules",
     "build",
-    "dist"
+    "dist",
+    "index.mjs",
+    "index.d.mts"
   ]
 }
