@@ -53,7 +53,7 @@
     },
     "homepage": "https://github.com/TPN-Labs/keez-node#readme",
     "devDependencies": {
-        "@eslint/js": "^9.18.0",
+        "@eslint/js": "^10.0.1",
         "@types/jest": "^30.0.0",
         "@typescript-eslint/eslint-plugin": "^8.20.0",
         "@typescript-eslint/parser": "^8.20.0",
