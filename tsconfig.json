@@ -7,12 +7,12 @@
     ],
     "allowJs": true,
     "declaration": true,
+    "rootDir": ".",
     "outDir": "./dist",
     "declarationDir": "./dist/types",
     "strict": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "esModuleInterop": true,
     "noImplicitAny": true,
@@ -27,6 +27,10 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "skipLibCheck": true,
+    "types": [
+      "node",
+      "jest"
+    ],
     "typeRoots": [
       "./node_modules/@types"
     ]
