@@ -67,7 +67,7 @@
         "prettier": "^3.4.2",
         "ts-jest": "^29.4.7",
         "tsc-alias": "^1.8.16",
-        "typescript": "^6.0.3"
+        "typescript": "^7.0.2"
     },
     "files": [
         "dist/**/*",
