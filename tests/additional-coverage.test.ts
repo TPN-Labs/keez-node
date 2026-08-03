@@ -1,4 +1,5 @@
 import nock = require('nock');
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { KeezApi } from '@/keezApi';
 import { apiGenerateToken } from '@/api/authorise';
 import { apiCancelInvoice } from '@/api/invoices/cancel';
@@ -119,10 +120,30 @@ describe('Additional Coverage Tests', () => {
     });
 
     describe('Network Error Handling (axiosError.message fallback)', () => {
+        // nock v14's replyWithError leaks HTTPINCOMINGMESSAGE handles that keep
+        // Jest from exiting, so network errors are simulated with a rejecting
+        // client instead of a mocked socket error.
+        function networkError(message: string): AxiosError {
+            return new AxiosError(message, AxiosError.ERR_NETWORK);
+        }
+
+        function failingHttpClient(message: string): AxiosInstance {
+            const reject = () => Promise.reject(networkError(message));
+            return {
+                get: reject,
+                post: reject,
+                put: reject,
+                patch: reject,
+                delete: reject,
+            } as unknown as AxiosInstance;
+        }
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
         it('should handle network error in apiGenerateToken', async () => {
-            nock(baseDomain)
-                .post('/idp/connect/token')
-                .replyWithError('Network Error');
+            jest.spyOn(axios, 'post').mockRejectedValueOnce(networkError('Network Error'));
 
             await expect(
                 apiGenerateToken({
@@ -134,10 +155,6 @@ describe('Additional Coverage Tests', () => {
         });
 
         it('should handle network error in apiCancelInvoice', async () => {
-            nock(baseDomain)
-                .post(`/api/v1.0/public-api/${clientEid}/invoices/canceled`)
-                .replyWithError('Connection refused');
-
             await expect(
                 apiCancelInvoice({
                     baseDomain,
@@ -145,15 +162,12 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('Connection refused'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiDeleteInvoice', async () => {
-            nock(baseDomain)
-                .delete(`/api/v1.0/public-api/${clientEid}/invoices`)
-                .replyWithError('Connection timeout');
-
             await expect(
                 apiDeleteInvoice({
                     baseDomain,
@@ -161,15 +175,12 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('Connection timeout'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiDownloadInvoicePdf', async () => {
-            nock(baseDomain)
-                .get(`/api/v1.0/public-api/${clientEid}/invoices/inv-123/pdf`)
-                .replyWithError('DNS resolution failed');
-
             await expect(
                 apiDownloadInvoicePdf({
                     baseDomain,
@@ -177,15 +188,12 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('DNS resolution failed'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiUpdateInvoice', async () => {
-            nock(baseDomain)
-                .put(`/api/v1.0/public-api/${clientEid}/invoices/inv-123`)
-                .replyWithError('Socket hang up');
-
             await expect(
                 apiUpdateInvoice({
                     baseDomain,
@@ -193,6 +201,7 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('Socket hang up'),
                     invoice: {
                         series: 'INV',
                         documentDate: 20230101,
@@ -230,10 +239,6 @@ describe('Additional Coverage Tests', () => {
         });
 
         it('should handle network error in apiSubmitEfactura', async () => {
-            nock(baseDomain)
-                .post(`/api/v1.0/public-api/${clientEid}/invoices/efactura/submitted`)
-                .replyWithError('ECONNRESET');
-
             await expect(
                 apiSubmitEfactura({
                     baseDomain,
@@ -241,15 +246,12 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('ECONNRESET'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiValidateInvoice', async () => {
-            nock(baseDomain)
-                .post(`/api/v1.0/public-api/${clientEid}/invoices/valid`)
-                .replyWithError('ETIMEDOUT');
-
             await expect(
                 apiValidateInvoice({
                     baseDomain,
@@ -257,15 +259,12 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('ETIMEDOUT'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiGetInvoiceByExternalId', async () => {
-            nock(baseDomain)
-                .get(`/api/v1.0/public-api/${clientEid}/invoices/inv-123`)
-                .replyWithError('ENOTFOUND');
-
             await expect(
                 apiGetInvoiceByExternalId({
                     baseDomain,
@@ -273,30 +272,24 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('ENOTFOUND'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiGetAllInvoices', async () => {
-            nock(baseDomain)
-                .get(`/api/v1.0/public-api/${clientEid}/invoices`)
-                .replyWithError('EHOSTUNREACH');
-
             await expect(
                 apiGetAllInvoices({
                     baseDomain,
                     appId: 'test-app-id',
                     appClientId: clientEid,
                     bearerToken: 'test-token',
+                    httpClient: failingHttpClient('EHOSTUNREACH'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiSendInvoice', async () => {
-            nock(baseDomain)
-                .post('/api/v1.0/public-api/invoices/delivery')
-                .replyWithError('ECONNREFUSED');
-
             await expect(
                 apiSendInvoice({
                     baseDomain,
@@ -304,15 +297,12 @@ describe('Additional Coverage Tests', () => {
                     bearerToken: 'test-token',
                     clientMail: 'test@example.com',
                     invoiceId: 'inv-123',
+                    httpClient: failingHttpClient('ECONNREFUSED'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiCreateItem', async () => {
-            nock(baseDomain)
-                .post(`/api/v1.0/public-api/${clientEid}/items`)
-                .replyWithError('Network Error');
-
             await expect(
                 apiCreateItem({
                     baseDomain,
@@ -325,30 +315,24 @@ describe('Additional Coverage Tests', () => {
                         unitPrice: 100,
                         vatPercent: 19,
                     },
+                    httpClient: failingHttpClient('Network Error'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiGetAllItems', async () => {
-            nock(baseDomain)
-                .get(`/api/v1.0/public-api/${clientEid}/items`)
-                .replyWithError('Connection failed');
-
             await expect(
                 apiGetAllItems({
                     baseDomain,
                     appId: 'test-app-id',
                     appClientId: clientEid,
                     bearerToken: 'test-token',
+                    httpClient: failingHttpClient('Connection failed'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiGetItemById', async () => {
-            nock(baseDomain)
-                .get(`/api/v1.0/public-api/${clientEid}/items/item-123`)
-                .replyWithError('Request timeout');
-
             await expect(
                 apiGetItemById({
                     baseDomain,
@@ -356,15 +340,12 @@ describe('Additional Coverage Tests', () => {
                     appClientId: clientEid,
                     bearerToken: 'test-token',
                     itemId: 'item-123',
+                    httpClient: failingHttpClient('Request timeout'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiUpdateItem', async () => {
-            nock(baseDomain)
-                .put(`/api/v1.0/public-api/${clientEid}/items/item-123`)
-                .replyWithError('Socket closed');
-
             await expect(
                 apiUpdateItem({
                     baseDomain,
@@ -378,15 +359,12 @@ describe('Additional Coverage Tests', () => {
                         unitPrice: 150,
                         vatPercent: 19,
                     },
+                    httpClient: failingHttpClient('Socket closed'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
 
         it('should handle network error in apiPatchItem', async () => {
-            nock(baseDomain)
-                .patch(`/api/v1.0/public-api/${clientEid}/items/item-123`)
-                .replyWithError('Peer reset connection');
-
             await expect(
                 apiPatchItem({
                     baseDomain,
@@ -397,6 +375,7 @@ describe('Additional Coverage Tests', () => {
                     item: {
                         unitPrice: 200,
                     },
+                    httpClient: failingHttpClient('Peer reset connection'),
                 })
             ).rejects.toThrow(KeezApiError);
         });
