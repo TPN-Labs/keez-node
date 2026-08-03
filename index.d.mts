@@ -4,6 +4,10 @@ export { KeezError, KeezAuthError, KeezApiError } from './dist/types/src/errors/
 // Config
 export { PaymentType } from './dist/types/src/config/paymentType.js';
 export { MeasureUnit } from './dist/types/src/config/measureUnit.js';
+export { KeezConstructor } from './dist/types/src/config/constructorParam.js';
+
+// Logger
+export { KeezLogger, noopLogger } from './dist/types/src/helpers/keezLogger.js';
 
 // Common DTOs
 export { PaginationParams } from './dist/types/src/dto/common/index.js';
