@@ -49,6 +49,7 @@ export class KeezApi {
         this.httpClient = createHttpClient({
             logger: this.logger,
             maxRetries: params.maxRetries,
+            retryNonIdempotentRequests: params.retryNonIdempotentRequests,
         });
         this.invoices = new InvoiceClient(this);
         this.items = new ItemClient(this);

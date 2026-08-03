@@ -31,6 +31,7 @@ npm install keez-invoicing
 | `live` | `boolean` | Yes | - | `true` for production (`app.keez.ro`), `false` for staging (`staging.keez.ro`) |
 | `logger` | `KeezLogger` | No | no-op | Custom logger implementing the `KeezLogger` interface |
 | `maxRetries` | `number` | No | `3` | Maximum retries for transient failures (429, 5xx). Set to `0` to disable |
+| `retryNonIdempotentRequests` | `boolean` | No | `false` | Also retry POST/PATCH on 5xx and network errors. Off by default to avoid duplicating requests the server may already have processed (POST/PATCH are always retried on 429) |
 
 ### Initialization
 
@@ -81,6 +82,8 @@ const keezApi = new KeezApi({
     maxRetries: 5, // or 0 to disable retries
 });
 ```
+
+Only idempotent requests (GET, PUT, DELETE) are retried on 5xx responses and network errors. Non-idempotent requests (POST, PATCH — e.g. creating an invoice) are retried only on HTTP 429, because a rate-limited request was never processed, while after a 5xx or a network error the server may already have applied the request and a retry could duplicate it. Set `retryNonIdempotentRequests: true` to restore retries for POST/PATCH on 5xx and network errors as well.
 
 ## API Reference
 
