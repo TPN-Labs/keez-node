@@ -1,6 +1,6 @@
 {
     "name": "keez-invoicing",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "description": "Keez API wrapper using Node",
     "type": "commonjs",
     "main": "dist/src/index.js",
