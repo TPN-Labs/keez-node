@@ -63,7 +63,7 @@
         "globals": "^17.0.0",
         "typescript-eslint": "^8.20.0",
         "jest": "^30.2.0",
-        "nock": "^14.0.10",
+        "nock": "^15.0.6",
         "prettier": "^3.4.2",
         "ts-jest": "^29.4.7",
         "tsc-alias": "^1.8.16",
